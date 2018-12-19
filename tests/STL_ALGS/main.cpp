@@ -32,6 +32,20 @@ TEST(STL_ALG_ASimpleScalar, CanBeFilledWithIota)
   }
 }
 
+TEST(STL_ALG_ASimpleScalar, CanBeSortedByValues)
+{
+    auto s = TimeSeries::ScalarTs{{1.,2,3.},{4.,3,2.}};
+    std::sort(std::begin(s),std::end(s));
+    std::cout << s.begin()->v();
+}
+
+TEST(STL_ALG_ASimpleScalar, CanSwapTwoValues)
+{
+    auto s = TimeSeries::ScalarTs{{1.,2},{4.,3}};
+    //std::swap(*s.begin(),*(s.begin()+1));
+    std::cout << s.begin()->v();
+}
+
 TEST(STL_ALG_ASimpleScalar, CanBeUsedWithAdjDiff)
 {
   auto s = TimeSeries::ScalarTs{10};

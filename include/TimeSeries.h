@@ -21,103 +21,132 @@ private:
     double value_;
 };
 
+template <class Iterator>
+struct Iterator_inc_op
+{
+    Iterator &operator++()
+    {
+        static_cast<Iterator*>(this)->_CurrentValue.next();
+        return *static_cast<Iterator*>(this);
+    }
+
+    Iterator operator++(int)const
+    {
+        Iterator result(*static_cast<const Iterator*>(this));
+        this->operator++();
+        return result;
+    }
+
+    Iterator &operator--()
+    {
+        static_cast<Iterator*>(this)->_CurrentValue.prev();
+        return *static_cast<Iterator*>(this);
+    }
+
+    Iterator operator--(int)const
+    {
+        Iterator result(*static_cast<const Iterator*>(this));
+        this->operator--();
+        return result;
+    }
+
+    Iterator &operator+=(int offset)
+    {
+        static_cast<Iterator*>(this)->_CurrentValue.next(offset);
+        return *static_cast<Iterator*>(this);
+    }
+    Iterator &operator-=(int offset)
+    {
+        return *this += -offset;
+    }
+
+    Iterator operator+(int offset) const
+    {
+        Iterator result(*static_cast<const Iterator*>(this));
+        result += offset;
+        return result;
+    }
+
+    Iterator operator-(int offset) const
+    {
+        Iterator result(*static_cast<const Iterator*>(this));
+        result -= offset;
+        return *static_cast<Iterator*>(&result);
+    }
+
+    friend int operator-(const Iterator &lhs, const Iterator &rhs)
+    {
+        return lhs._CurrentValue.distance(rhs._CurrentValue);
+    }
+};
+
+template <class Iterator>
+struct Iterator_comp_op
+{
+    friend bool operator==(const Iterator &lhs, const Iterator &rhs)
+    {
+        return lhs._CurrentValue.equals(rhs._CurrentValue);
+    }
+    friend bool operator!=(const Iterator &lhs, const Iterator &rhs)
+    {
+        return !lhs._CurrentValue.equals(rhs._CurrentValue);
+    }
+    friend bool operator<(const Iterator &lhs, const Iterator &rhs)
+    {
+        return lhs._CurrentValue < rhs._CurrentValue;
+    }
+    friend bool operator>(const Iterator &lhs, const Iterator &rhs)
+    {
+        return lhs._CurrentValue > rhs._CurrentValue;
+    }
+    friend bool operator>=(const Iterator &lhs, const Iterator &rhs)
+    {
+        return lhs._CurrentValue >= rhs._CurrentValue;
+    }
+    friend bool operator<=(const Iterator &lhs, const Iterator &rhs)
+    {
+        return lhs._CurrentValue <= rhs._CurrentValue;
+    }
+
+};
+
 template <typename T, bool isConst=false>
-class _iterator {
+class _iterator : public
+        Iterator_inc_op<typename std::conditional<isConst, const _iterator<T, isConst>, _iterator<T, isConst>>::type>,
+        Iterator_comp_op<typename std::conditional<isConst, const _iterator<T, isConst>, _iterator<T, isConst>>::type>
+{
 public:
+    //std::size_t _position;
+    T _CurrentValue;
     using iterator_category = std::random_access_iterator_tag;
     using value_type = typename std::conditional<isConst, const T, T>::type;
     using difference_type = std::ptrdiff_t;
     using pointer = value_type *;
     using reference = value_type &;
 
-    explicit _iterator(T value) : m_CurrentValue{std::move(value)} {}
+    explicit _iterator(T value) : _CurrentValue{std::move(value)} {}
 
     virtual ~_iterator() noexcept = default;
     _iterator(const _iterator &) = default;
     _iterator &operator=(_iterator other)
     {
-        swap(m_CurrentValue,other.m_CurrentValue);
+        swap(_CurrentValue,other._CurrentValue);
         return *this;
     }
 
-    _iterator &operator++()
+    friend void swap(const _iterator &lhs, const _iterator &rhs)
     {
-        m_CurrentValue.next();
-        return *this;
+        swap(lhs._CurrentValue, rhs._CurrentValue);
     }
 
-    _iterator &operator--()
-    {
-        m_CurrentValue.prev();
-        return *this;
-    }
+    const T *operator->() const { return &_CurrentValue; }
+    const T &operator*() const { return _CurrentValue; }
+    T *operator->() { return &_CurrentValue; }
+    T &operator*() { return _CurrentValue; }
+    T &operator[](int offset) const { return _CurrentValue.advance(offset); }
 
-    _iterator operator++(int)const
-    {
-        auto result = *this;
-        this->operator++();
-        return result;
-    }
-    _iterator operator--(int)const
-    {
-        auto result = *this;
-        this->operator--();
-        return result;
-    }
+protected:
 
-    _iterator &operator+=(int offset)
-    {
-        if (offset >= 0) {
-            m_CurrentValue.next(offset);
-        }
-        else {
-            m_CurrentValue.prev(-offset);
-        }
-
-        return *this;
-    }
-    _iterator &operator-=(int offset) { return *this += -offset; }
-
-    _iterator operator+(int offset) const
-    {
-        auto result = *this;
-        result += offset;
-        return result;
-    }
-
-    _iterator operator-(int offset) const
-    {
-        auto result = *this;
-        result -= offset;
-        return result;
-    }
-
-    int operator-(const _iterator &other) const
-    {
-        return m_CurrentValue.distance(other.m_CurrentValue);
-    }
-
-    const T *operator->() const { return &m_CurrentValue; }
-    const T &operator*() const { return m_CurrentValue; }
-    T *operator->() { return &m_CurrentValue; }
-    T &operator*() { return m_CurrentValue; }
-    T &operator[](int offset) const { return m_CurrentValue.advance(offset); }
-
-    bool operator==(const _iterator &other) const
-    {
-        return m_CurrentValue.equals(other.m_CurrentValue);
-    }
-    bool operator!=(const _iterator &other) const { return !(*this == other); }
-    bool operator>(const _iterator &other) const { return other.m_CurrentValue.lowerThan(*this); }
-    bool operator<(const _iterator &other) const
-    {
-        return m_CurrentValue.lowerThan(other.m_CurrentValue);
-    }
-    bool operator>=(const _iterator &other) const { return !(*this < other); }
-    bool operator<=(const _iterator &other) const { return !(*this > other); }
-
-private:
-    T m_CurrentValue;
 };
 
 class ITimeSerie
@@ -141,6 +170,12 @@ struct TimeSerieView
 template <typename ValueType, typename TimeSerieType>
 class TimeSerie : public ITimeSerie
 {
+
+protected:
+    std::vector<ValueType> _data;
+    std::vector<double> _t;
+public:
+
     struct IteratorValue
     {
         IteratorValue(TimeSerieType* ts, std::size_t position = 0)
@@ -149,10 +184,17 @@ class TimeSerie : public ITimeSerie
             if(ts==nullptr)throw;
         }
 
-        friend void swap(IteratorValue& lhs, IteratorValue& rhs)
+        virtual ~IteratorValue() noexcept = default;
+
+        void swap(IteratorValue& other)
         {
-            std::swap(lhs._ts, rhs._ts);
-            std::swap(lhs._position, rhs._position);
+            auto v = this->v();
+            *this = other.v();
+            other = v;
+            Second t{this->t()};
+            *this = Second{other.t()};
+            other = t;
+            std::swap(this->_position, other._position);
         }
 
         IteratorValue& operator=(ValueType value)
@@ -169,15 +211,44 @@ class TimeSerie : public ITimeSerie
 
         IteratorValue& operator=(const IteratorValue& other)
         {
-            (*this->_ts)[this->_position] = other.v();
+            *this = other.v();
+            *this = Second{other.t()};
             return *this;
         }
 
-        inline auto v()const {return (*_ts)[_position];}
-        inline double t()const {return _ts->t(_position);};
+        friend bool operator< (const IteratorValue& lhs, const IteratorValue& rhs)
+        { return lhs.v() < rhs.v(); }
+        friend bool operator> (const IteratorValue& lhs, const IteratorValue& rhs){ return rhs < lhs; }
+        friend bool operator<=(const IteratorValue& lhs, const IteratorValue& rhs){ return !(lhs > rhs); }
+        friend bool operator>=(const IteratorValue& lhs, const IteratorValue& rhs){ return !(lhs < rhs); }
 
-        void next(std::size_t offset=1){_position+=offset;}
-        void prev(std::size_t offset=1){_position-=offset;}
+
+        auto v()const {return (*_ts)[_position];}
+        double t()const {return _ts->t(_position);};
+
+        template<typename T>
+        constexpr auto wrap(T pos, T size){return (size+pos)%size;}
+
+        void next(std::size_t offset=1)
+        {
+            _position+=offset;
+            [[unlikely]]
+            if(_position<0)
+                _position = wrap(_position, _ts->size());
+        }
+        void prev(std::size_t offset=1)
+        {
+            _position-=offset;
+            [[unlikely]]
+            if(_position<0)
+                _position = wrap(_position, _ts->size());
+        }
+
+        int distance(const IteratorValue& other)const
+        {
+            return _position - other._position;
+        }
+
         bool equals(const IteratorValue& other)const
         {
             return this->_position == other._position;
@@ -192,10 +263,6 @@ class TimeSerie : public ITimeSerie
         TimeSerieType* _ts;
     };
 
-protected:
-    std::vector<ValueType> _data;
-    std::vector<double> _t;
-public:
     typedef ValueType value_type;
     typedef _iterator<IteratorValue> IteratorT;
 
@@ -226,6 +293,8 @@ public:
 
     double t(const std::size_t& position)const {return _t[position];}
     double& t(const std::size_t& position) {return _t[position];}
+    ValueType v(const std::size_t& position)const {return _data[position];}
+    ValueType& v(const std::size_t& position) {return _data[position];}
 
     IteratorT begin(){return IteratorT(IteratorValue(static_cast<TimeSerieType*>(this),0));};
     IteratorT end(){return IteratorT(IteratorValue(static_cast<TimeSerieType*>(this),size()));};
@@ -242,8 +311,14 @@ public:
     name(){};\
     using TimeSerie::TimeSerie; \
 };\
+void swap(typename name::IteratorValue& lhs, typename name::IteratorValue& rhs)\
+{\
+    lhs.swap(rhs);\
+}\
 
 DECLARE_TS(ScalarTs, double)
+
+
 
 struct Vector
 {

@@ -47,6 +47,13 @@ target_include_directories(TimeSeries
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
+find_package(benchmark)
+if(benchmark_FOUND)
+    add_executable(TS_benchmarks tests/benchmarks/main.cpp)
+    target_link_libraries(TS_benchmarks benchmark TimeSeries)
+    add_test(NAME TS_benchmarks COMMAND TS_benchmarks)
+endif()
+
 
 if(NOT IS_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/googletest)
 	message("Init submodule googletest")
@@ -56,7 +63,6 @@ endif()
 add_subdirectory(googletest)
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
-
 
 enable_testing()
 

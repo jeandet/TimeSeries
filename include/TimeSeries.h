@@ -4,6 +4,23 @@
 
 namespace TimeSeries
 {
+// Could use opaque library but here we only have one use of
+// opaque/strong typedefs
+class Second
+{
+public:
+    explicit Second(double val)
+    : value_(val) {}
+
+    explicit operator double() const noexcept
+    {
+        return value_;
+    }
+
+private:
+    double value_;
+};
+
 template <typename T, bool isConst=false>
 class _iterator {
 public:
@@ -144,6 +161,12 @@ class TimeSerie : public ITimeSerie
             return *this;
         }
 
+        IteratorValue& operator=(Second value)
+        {
+            _ts->t(_position) = static_cast<double>(value);
+            return *this;
+        }
+
         IteratorValue& operator=(const IteratorValue& other)
         {
             (*this->_ts)[this->_position] = other.v();
@@ -180,7 +203,7 @@ public:
     TimeSerie(std::size_t size)
         :_data(size),_t(size)
     {}
-    TimeSerie(std::vector<ValueType>&& data, std::vector<double>&& t)
+    TimeSerie(std::vector<double>&& t, std::vector<ValueType>&& data)
         :_data{data},_t{t}
     {}
     ValueType& operator[](const std::size_t& position){return _data[position];}
@@ -201,7 +224,6 @@ public:
         return TimeSerieView(b, e);
     }
 
-
     double t(const std::size_t& position)const {return _t[position];}
     double& t(const std::size_t& position) {return _t[position];}
 
@@ -218,13 +240,7 @@ public:
     public:\
     ~name() = default;\
     name(){};\
-    name(const name&) = default;\
-    name(std::vector<DataType> data, std::vector<double> t)\
-    :TimeSerie{std::move(data),std::move(t)}\
-{}\
-    name(std::size_t size)\
-    :TimeSerie{size}\
-{}\
+    using TimeSerie::TimeSerie; \
 };\
 
 DECLARE_TS(ScalarTs, double)

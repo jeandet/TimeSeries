@@ -74,50 +74,51 @@ struct Iterator_inc_op
         return *static_cast<Iterator*>(&result);
     }
 
-    friend int operator-(const Iterator &lhs, const Iterator &rhs)
+    int operator-(const Iterator &other) const
     {
-        return lhs._CurrentValue.distance(rhs._CurrentValue);
+        return static_cast<const Iterator*>(this)->_CurrentValue.distance(other._CurrentValue);
     }
 };
 
 template <class Iterator>
 struct Iterator_comp_op
 {
-    friend bool operator==(const Iterator &lhs, const Iterator &rhs)
+    bool operator==(const Iterator &other) const
     {
-        return lhs._CurrentValue.equals(rhs._CurrentValue);
+        return static_cast<const Iterator*>(this)->_CurrentValue.equals(other._CurrentValue);
     }
-    friend bool operator!=(const Iterator &lhs, const Iterator &rhs)
+    bool operator!=(const Iterator &other) const
     {
-        return !lhs._CurrentValue.equals(rhs._CurrentValue);
+        return !static_cast<const Iterator*>(this)->_CurrentValue.equals(other._CurrentValue);
     }
-    friend bool operator<(const Iterator &lhs, const Iterator &rhs)
+    bool operator<(const Iterator &other) const
     {
-        return lhs._CurrentValue < rhs._CurrentValue;
+        return static_cast<const Iterator*>(this)->_CurrentValue < other._CurrentValue;
     }
-    friend bool operator>(const Iterator &lhs, const Iterator &rhs)
+    bool operator>(const Iterator &other) const
     {
-        return lhs._CurrentValue > rhs._CurrentValue;
+        return !(this < other);
     }
-    friend bool operator>=(const Iterator &lhs, const Iterator &rhs)
+    bool operator>=(const Iterator &other) const
     {
-        return lhs._CurrentValue >= rhs._CurrentValue;
+        return !(this < other);
     }
-    friend bool operator<=(const Iterator &lhs, const Iterator &rhs)
+    bool operator<=(const Iterator &other) const
     {
-        return lhs._CurrentValue <= rhs._CurrentValue;
+        return !(this > other);
     }
 
 };
 
 template <typename T, bool isConst=false>
 class _iterator : public
-        Iterator_inc_op<typename std::conditional<isConst, const _iterator<T, isConst>, _iterator<T, isConst>>::type>,
-        Iterator_comp_op<typename std::conditional<isConst, const _iterator<T, isConst>, _iterator<T, isConst>>::type>
+        Iterator_inc_op < _iterator<T, isConst> >,
+        public Iterator_comp_op< _iterator<T, isConst> >
 {
 public:
-    //std::size_t _position;
-    T _CurrentValue;
+    friend struct Iterator_inc_op<_iterator<T, isConst>>;
+    friend struct Iterator_comp_op<_iterator<T, isConst>>;
+
     using iterator_category = std::random_access_iterator_tag;
     using value_type = typename std::conditional<isConst, const T, T>::type;
     using difference_type = std::ptrdiff_t;
@@ -145,8 +146,8 @@ public:
     T &operator*() { return _CurrentValue; }
     T &operator[](int offset) const { return _CurrentValue.advance(offset); }
 
-protected:
-
+private:
+    T _CurrentValue;
 };
 
 class ITimeSerie

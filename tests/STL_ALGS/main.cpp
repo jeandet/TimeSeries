@@ -37,13 +37,16 @@ TEST(STL_ALG_ASimpleScalar, CanBeSortedByValues)
     auto s = TimeSeries::ScalarTs{{1.,2,3.},{4.,3,2.}};
     std::sort(std::begin(s),std::end(s));
     std::cout << s.begin()->v();
+    std::vector test{1.,2.};
 }
 
 TEST(STL_ALG_ASimpleScalar, CanSwapTwoValues)
 {
     auto s = TimeSeries::ScalarTs{{1.,2},{4.,3}};
-    //std::swap(*s.begin(),*(s.begin()+1));
-    std::cout << s.begin()->v();
+    auto exp = TimeSeries::ScalarTs{{2.,1},{3.,4}};
+    std::swap(*s.begin(),*(s.begin()+1));
+    EXPECT_EQ(*exp.begin(), *s.begin());
+    EXPECT_EQ(*(exp.begin()+1), *(s.begin()+1));
 }
 
 TEST(STL_ALG_ASimpleScalar, CanBeUsedWithAdjDiff)

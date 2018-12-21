@@ -243,7 +243,7 @@ public:
             :_t_{other.t()}, _v_{other.v()},_t{std::ref(_t_)},_v{std::ref(_v_)}
         {}
 
-        void operator()(double& t, double& v)
+        void operator()(double& t, ValueType& v)
         {
             _t = std::ref(t);
             _v = std::ref(v);
@@ -298,8 +298,8 @@ public:
             return *this;
         }
 
-        auto v()const{return _v;}
-        auto& v(){return _v;}
+        auto v()const{return _v.get();}
+        auto& v(){return _v.get();}
         double t()const{return _t;}
         double& t(){return _t;}
 

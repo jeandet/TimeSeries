@@ -3,8 +3,10 @@
 #include <numeric>
 #include <vector>
 
+USER_DECLARE_TS(MyTimeSerie, double);
+
 static void BM_TS_STD_IOTA(benchmark::State& state) {
-    TimeSeries::ScalarTs ts(state.range(0));
+    MyTimeSerie ts(state.range(0));
     for (auto _ : state)
         std::iota(std::begin(ts), std::end(ts),0.);
 }

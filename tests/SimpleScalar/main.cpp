@@ -34,6 +34,17 @@ TEST(ASimpleScalar, CanBeCopyConstructed)
     EXPECT_EQ(33., s2.begin()->v());
 }
 
+TEST(ASimpleScalar, CanSetByPair)
+{
+    //this has at least to buidl
+    auto s = TimeSeries::ScalarTs({0.,1.,2.},{33.,22.,11.});
+    auto s2 = s;
+    *s.begin() = 0.;
+    EXPECT_EQ(3, s.size());
+    EXPECT_EQ(3, s2.size());
+    EXPECT_EQ(33., s2.begin()->v());
+}
+
 TEST(ASimpleScalar, CanSetTimeWithSecondStrongType)
 {
     //this has at least to buidl

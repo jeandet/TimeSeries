@@ -5,9 +5,21 @@ project('TimeSeries', 'cpp',
 time_series_dep = declare_dependency(include_directories:include_directories('include'))
 
 gtest_dep = dependency('gtest', main : true, fallback : ['gtest', 'gtest_dep'])
+benchmark_dep = dependency('benchmark', fallback : ['benchmark', 'benchmark_dep'])
 
-SimpleScalar = executable('SimpleScalar','tests/SimpleScalar/main.cpp', 
-			dependencies:[gtest_dep, time_series_dep],
-			install: true
-			)
-test('SimpleScalar test', SimpleScalar)
+foreach test:['SimpleScalar','STL_ALGS','GenericTS']
+    exe = executable(test,'tests/'+test+'/main.cpp',
+                    dependencies:[gtest_dep, time_series_dep],
+                    install: true
+                    )
+    test(test, exe)
+endforeach
+
+foreach benchmark:['benchmarks']
+    exe = executable(benchmark,'tests/'+benchmark+'/main.cpp',
+                    dependencies:[benchmark_dep, time_series_dep],
+                    install: true
+                    )
+    benchmark(test, exe)
+endforeach
+

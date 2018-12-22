@@ -298,8 +298,8 @@ public:
             return *this;
         }
 
-        auto v()const{return _v.get();}
-        auto& v(){return _v.get();}
+        ValueType v()const{return _v.get();}
+        ValueType& v(){return _v.get();}
         double t()const{return _t;}
         double& t(){return _t;}
 

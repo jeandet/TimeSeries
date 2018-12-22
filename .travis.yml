@@ -1,0 +1,48 @@
+language: cpp
+
+common_sources: &all_sources
+  - ubuntu-toolchain-r-test
+
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      dist: xenial
+      addons:
+          apt:
+              sources: *all_sources
+              packages:
+                - g++-7
+                - python3.5
+                - python3-pip
+                - python3-setuptools
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+    - os: linux
+      compiler: clang
+      dist: xenial
+      addons:
+          apt:
+              sources: *all_sources
+              packages:
+                - clang-5.0
+                - python3.5
+                - python3-pip
+                - python3-setuptools
+      env:
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+
+before_install:
+  - eval "${MATRIX_EVAL}"
+
+install:
+  - pip3 install --user meson
+  - pip3 install --upgrade --user ninja
+
+script:
+  - mkdir build
+  - meson . build
+  - cd build
+  - ninja
+  - ninja test
+  - ninja benchmark

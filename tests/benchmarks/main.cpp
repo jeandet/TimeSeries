@@ -26,7 +26,7 @@ static void BM_TS_STD_SORT(benchmark::State& state) {
     for (auto _ : state)
         std::sort(std::begin(ts), std::end(ts));
 }
-BENCHMARK(BM_TS_STD_SORT)->RangeMultiplier(2)->Range(128, 4096)->Complexity();
+BENCHMARK(BM_TS_STD_SORT)->RangeMultiplier(2)->Range(128, 512)->Complexity();
 
 
 static void BM_TS_STD_IOTA_ON_STD_VECT(benchmark::State& state) {
@@ -49,7 +49,7 @@ static void BM_TS_STD_SORT_ON_STD_VECT(benchmark::State& state) {
     for (auto _ : state)
         std::sort(std::begin(vec), std::end(vec));
 }
-BENCHMARK(BM_TS_STD_SORT_ON_STD_VECT)->RangeMultiplier(2)->Range(128, 4096)->Complexity();
+BENCHMARK(BM_TS_STD_SORT_ON_STD_VECT)->RangeMultiplier(2)->Range(128, 512)->Complexity();
 
 
 BENCHMARK_MAIN();

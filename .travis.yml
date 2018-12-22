@@ -25,12 +25,12 @@ matrix:
           apt:
               sources: *all_sources
               packages:
-                - clang-5.0
+                - clang-6.0
                 - python3.5
                 - python3-pip
                 - python3-setuptools
       env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+        - MATRIX_EVAL="CC=clang-6.0 && CXX=clang++-6.0"
 
 before_install:
   - eval "${MATRIX_EVAL}"

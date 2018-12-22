@@ -20,6 +20,6 @@ foreach benchmark:['benchmarks']
                     dependencies:[benchmark_dep, time_series_dep],
                     install: true
                     )
-    benchmark(test, exe)
+    benchmark(test, exe, timeout: 120)
 endforeach
 

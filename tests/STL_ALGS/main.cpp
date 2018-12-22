@@ -37,10 +37,10 @@ TEST(STL_ALG_GenericTS, CanBeFilledWithIota)
 
 TEST(STL_ALG_GenericTS, CanBeSortedByValues)
 {
-    auto s = MyTimeSerie{{1.,2,3.},{4.,3,2.}};
+    auto s = MyTimeSerie{{1.,2,3.,4.,5.,6.},{6.,5.,4.,3.,2.,1.}};
+    auto sorted = MyTimeSerie{{1.,2,3.,4.,5.,6.},{1.,2,3.,4.,5.,6.}};
     std::sort(std::begin(s),std::end(s));
-    std::cout << s.begin()->v();
-    std::vector test{1.,2.};
+    EXPECT_EQ(std::equal(std::begin(s),std::end(s), std::begin(sorted)),true);
 }
 
 TEST(STL_ALG_GenericTS, CanBeUsedWithGenerate)

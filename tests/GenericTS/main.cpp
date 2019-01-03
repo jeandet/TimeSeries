@@ -37,7 +37,7 @@ TEST(AGenericTS, CanSetByPair)
 {
     auto s = MyTimeSerie({0.,1.,2.},{33.,22.,11.});
     auto it = s.begin();
-    *it = {11., 99.};
+    *it = std::pair{11., 99.};
     EXPECT_EQ(11., it->t());
     EXPECT_EQ(99., it->v());
 }
@@ -51,6 +51,47 @@ TEST(AGenericTS, CanSetTimeWithSecondStrongType)
     EXPECT_EQ(22.,it->v());
 }
 
+TEST(AGenericTS, CanCompareIterators)
+{
+    auto s = TimeSeries::ScalarTs({0.,1.,2.},{33.,22.,11.});
+    auto it1 = s.begin();
+    EXPECT_EQ(it1,s.begin());
+    EXPECT_NE(it1,s.begin()+1);
+}
+
+TEST(AGenericTS, CanCompyIteratorsValues)
+{
+    auto s = TimeSeries::ScalarTs({0.,1.,2.},{33.,22.,11.});
+    auto it = s.begin();
+    auto v = *it;
+    auto v2 = v;
+    EXPECT_EQ(v,*it);
+    EXPECT_EQ(v,v2);
+    auto v3 = std::move(v);
+    EXPECT_EQ(v3,v2);
+}
+
+TEST(AGenericTS, CanSetValueFromIterators)
+{
+    auto s = TimeSeries::ScalarTs({0.,1.,2.},{33.,22.,11.});
+    auto it = s.begin();
+    EXPECT_EQ(it->v(),33.);
+    *it = 1234.;
+    EXPECT_EQ(it->v(),1234.);
+}
+
+TEST(AGenericTS, CanRangeBasedLoopIterators)
+{
+    auto s = TimeSeries::ScalarTs({0.,1.,2.},{33.,22.,11.});
+    for(auto& v:s)
+    {
+        v=1111.;
+    }
+    for(const auto& v:s)
+    {
+       EXPECT_EQ(v.v(),1111.);
+    }
+}
 
 }  // namespace
 

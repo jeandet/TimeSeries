@@ -1,3 +1,5 @@
+#ifndef TIMESERIES_H
+#define TIMESERIES_H
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -138,11 +140,11 @@ struct _iterator :
     using reference = value_type &;
 
     explicit _iterator(ts_t* ts, std::size_t pos)
-        : _ts{ts}, _CurrentValue{ts->t(pos),ts->v(pos)}, _position{pos}
+        : _ts{ts}, _CurrentValue{ts, pos}, _position{pos}
     {}
 
     _iterator(const _iterator& other)
-        : _ts{other._ts}, _CurrentValue{other._ts->t(other._position),other._ts->v(other._position)}, _position{other._position}
+        : _ts{other._ts}, _CurrentValue{other._ts,other._position}, _position{other._position}
     {}
 
     virtual ~_iterator() noexcept = default;
@@ -214,25 +216,29 @@ struct TimeSerieView
     {}
 };
 
-template <typename ValueType, typename TimeSerieType>
+template <typename ValueType, typename TimeSerieType, int NDim=1, template<typename val_t, typename...> class container_t = std::vector>
 class TimeSerie : public ITimeSerie
 {
 
 protected:
-    std::vector<ValueType> _data;
-    std::vector<double> _t;
+    container_t<ValueType> _data;
+    container_t<double> _t;
 public:
 
     struct IteratorValue:
             public _comparable_object<IteratorValue>,
             public _addable_object<IteratorValue>
     {
-        using ts_type = TimeSerie<ValueType, TimeSerieType>;
+        using ts_type = TimeSerie<ValueType, TimeSerieType, NDim, container_t>;
         IteratorValue()=delete ;
         virtual ~IteratorValue() noexcept = default;
 
-        IteratorValue(double& t, ValueType& v)
-            :_t_{-100.},_v_{-100.},_t{std::ref(t)}, _v{std::ref(v)}
+        explicit IteratorValue(double& t, ValueType& v)
+            :_t{std::ref(t)}, _v{std::ref(v)}
+        {}
+
+        explicit IteratorValue(TimeSerie* ts, std::size_t position)
+            :_t(ts->t(position)), _v(ts->v(position))
         {}
 
         IteratorValue(IteratorValue && other)
@@ -319,15 +325,21 @@ public:
     };
 
     typedef ValueType value_type;
-    typedef _iterator<IteratorValue, TimeSerie<ValueType, TimeSerieType>> IteratorT;
+    typedef _iterator<IteratorValue, TimeSerie<ValueType, TimeSerieType, NDim, container_t>> IteratorT;
 
     TimeSerie()=default;
     TimeSerie(std::size_t size)
         :_data(size),_t(size)
     {}
-    TimeSerie(std::vector<double>&& t, std::vector<ValueType>&& data)
+    TimeSerie(container_t<double>&& t, container_t<ValueType>&& data)
         :_data{data},_t{t}
     {}
+    TimeSerie(const IteratorT& begin , const IteratorT& end)
+    {
+        this->resize(std::distance(begin,end));
+        std::copy(begin, end, this->begin());
+    }
+
     ValueType& operator[](const std::size_t& position){return _data[position];}
     TimeSerieView<IteratorT> operator[](const std::pair<int,int>& range)
     {
@@ -346,13 +358,33 @@ public:
         return TimeSerieView(b, e);
     }
 
+    void resize(std::size_t newSize)
+    {
+        _t.resize(newSize);
+        _data.resize(newSize);
+    }
+
     double t(const std::size_t& position)const {return _t[position];}
     double& t(const std::size_t& position) {return _t[position];}
     ValueType v(const std::size_t& position)const {return _data[position];}
     ValueType& v(const std::size_t& position) {return _data[position];}
 
-    IteratorT begin(){return IteratorT(this,0);};
-    IteratorT end(){return IteratorT(this,size());};
+    auto begin()
+    {
+        if constexpr (NDim==1)
+            return IteratorT(this,0);
+        else
+            return -1;
+
+    }
+    auto end()
+    {
+        if constexpr (NDim==1)
+                return IteratorT(this,size());
+        else
+            return -1;
+
+    }
 
     std::size_t size()override {return _t.size();}
 };
@@ -390,4 +422,6 @@ _DECLARE_TS(VectorTs, Vector)
     name(){}\
     using TimeSerie::TimeSerie; \
 };
+
+#endif //TIMESERIES_H
 

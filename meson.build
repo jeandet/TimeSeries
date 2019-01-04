@@ -5,7 +5,7 @@ project('TimeSeries', 'cpp',
 time_series_dep = declare_dependency(include_directories:include_directories('include'))
 
 gtest_dep = dependency('gtest', main : true, fallback : ['gtest', 'gtest_dep'])
-benchmark_dep = dependency('benchmark', fallback : ['benchmark', 'benchmark_dep'])
+benchmark_dep = dependency('benchmark', fallback : ['google-benchmark', 'google_benchmark_dep'])
 
 foreach test:['SimpleScalar','STL_ALGS','GenericTS']
     exe = executable(test,'tests/'+test+'/main.cpp',

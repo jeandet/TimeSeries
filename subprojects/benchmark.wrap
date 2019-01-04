@@ -1,4 +1,0 @@
-[wrap-git]
-directory = benchmark
-url = https://github.com/jeandet/benchmark.git
-revision = mesonbuild

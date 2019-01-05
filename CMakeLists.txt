@@ -3,7 +3,7 @@ project(TimeSeries CXX)
 
 include(GNUInstallDirs)
 
-
+execute_process(COMMAND touch hello)
 OPTION (CPPCHECK "Analyzes the source code with cppcheck" OFF)
 OPTION (CLANG_TIDY "Analyzes the source code with Clang Tidy" OFF)
 OPTION (IWYU "Analyzes the source code with Include What You Use" OFF)
@@ -97,3 +97,4 @@ endmacro(declare_test)
 declare_test(SimpleScalar SimpleScalar tests/SimpleScalar/main.cpp)
 declare_test(STL_ALGS STL_ALGS tests/STL_ALGS/main.cpp)
 declare_test(GenericTS GenericTS tests/GenericTS/main.cpp)
+declare_test(TimeSerie2D TimeSerie2D tests/TimeSerie2D/main.cpp)

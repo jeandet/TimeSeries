@@ -13,7 +13,10 @@ namespace TimeSeries
   class ITimeSerie
   {
   public:
-    virtual std::size_t size() = 0;
+    virtual ~ITimeSerie()=default;
+    virtual std::size_t size() const               = 0;
+    virtual std::size_t size(int index) const      = 0;
+    virtual std::vector<std::size_t> shape() const = 0;
   };
 
   template<typename T> struct TimeSerieView
@@ -48,30 +51,28 @@ namespace TimeSeries
     std::vector<std::size_t> _shape;
 
   public:
-    using type = TimeSerie<ValueType, TimeSerieType, NDim, container_t>;
+    using type       = TimeSerie<ValueType, TimeSerieType, NDim, container_t>;
+    using value_type = ValueType;
     using IteratorValue = details::iterators::IteratorValue<ValueType, type>;
     template<typename val_t, typename... args>
     using container_type = class container_t<val_t, args...>;
-
-    using value_type = ValueType;
-
-    using IteratorT = details::iterators::_iterator<
-        IteratorValue, TimeSerie<ValueType, TimeSerieType, NDim, container_t>>;
-    using IteratorNDT = details::iterators::_iterator<
-        details::iterators::TimeSerieSlice<ValueType, type, NDim - 1>, type>;
+    using Iterator_t     = details::iterators::_iterator<IteratorValue, type>;
+    template<int _NDim>
+    using IteratorND_t = details::iterators::_iterator<
+        details::iterators::TimeSerieSlice<ValueType, type, _NDim>, type>;
 
     TimeSerie() = default;
     TimeSerie(std::size_t size) : _data(size), _t(size) {}
 
     TimeSerie(const std::initializer_list<std::size_t>& sizes)
-        : _data(_flattenSize(sizes)), _t(_flattenSize(sizes)), _shape{sizes}
+        : _data(_flattenSize(sizes)), _t(_flattenSize(sizes)), _shape(sizes)
     {}
 
     TimeSerie(container_t<double>&& t, container_t<ValueType>&& data)
         : _data{data}, _t{t}
     {}
 
-    TimeSerie(const IteratorT& begin, const IteratorT& end)
+    TimeSerie(const Iterator_t& begin, const Iterator_t& end)
     {
       this->resize(std::distance(begin, end));
       std::copy(begin, end, this->begin());
@@ -118,19 +119,21 @@ namespace TimeSeries
     auto begin()
     {
       if constexpr(NDim == 1)
-        return IteratorT(this, 0);
+        return Iterator_t(this, 0);
       else
-        return IteratorNDT(this, 0);
+        return IteratorND_t<NDim - 1>(this, 0);
     }
     auto end()
     {
       if constexpr(NDim == 1)
-        return IteratorT(this, size());
+        return Iterator_t(this, size());
       else
-        return IteratorNDT(this, size());
+        return IteratorND_t<NDim - 1>(this, size());
     }
 
-    std::size_t size() override { return _t.size(); }
+    std::size_t size() const override { return _t.size(); }
+    std::size_t size(int index) const override { return _shape[index]; }
+    std::vector<std::size_t> shape() const override { return _shape; }
   };
 
 #define _DECLARE_TS(name, DataType)                                            \
@@ -162,7 +165,7 @@ namespace TimeSeries
     ~name() = default;                                                         \
     name() {}                                                                  \
     using TimeSerie::TimeSerie;                                                \
-  };
+  }
 
 #define USER_DECLARE_TS_ND(name, DataType, Dimmensions)                        \
   class name : public TimeSeries::TimeSerie<DataType, name, Dimmensions>       \
@@ -171,6 +174,6 @@ namespace TimeSeries
     ~name() = default;                                                         \
     name() {}                                                                  \
     using TimeSerie::TimeSerie;                                                \
-  };
+  }
 
 #endif // TIMESERIES_H

@@ -14,7 +14,6 @@ namespace TimeSeries::details::iterators
                          public details::arithmetic::_addable_object<
                              IteratorValue<ValueType, ts_type>>
   {
-    // using ts_type = TimeSerie<ValueType, TimeSerieType, NDim, container_t>;
     IteratorValue()                   = delete;
     virtual ~IteratorValue() noexcept = default;
 
@@ -110,7 +109,7 @@ namespace TimeSeries::details::iterators
   struct TimeSerieSlice
   {
   private:
-    using IteratorT = typename ts_type::IteratorT;
+    using Iterator_t = typename ts_type::Iterator_t;
     template<typename T, typename... args>
     using container_t = typename ts_type::template container_type<T, args...>;
 

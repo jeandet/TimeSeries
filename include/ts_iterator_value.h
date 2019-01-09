@@ -5,6 +5,7 @@
 #include <ts_iterators.h>
 #include <ts_time.h>
 #include <vector>
+#include <cassert>
 
 namespace TimeSeries::details::iterators
 {
@@ -112,11 +113,23 @@ namespace TimeSeries::details::iterators
     using Iterator_t = typename ts_type::Iterator_t;
     template<typename T, typename... args>
     using container_t = typename ts_type::template container_type<T, args...>;
+    using container_it_t = decltype (std::declval<container_t<ValueType>>().begin());
 
     ts_type* _tsd_;
     std::size_t _position;
     double _t_;
     std::reference_wrapper<double> _t;
+    const int _NDim=NDim;
+
+    template<int dim, typename T>
+    auto _container_begin(T& t)
+    {
+      if constexpr (dim==1)
+        return t.begin();
+      else
+        return _container_begin<dim-1>(*t.begin());
+    }
+
 
   public:
     TimeSerieSlice(ts_type* ts, std::size_t position)
@@ -131,13 +144,14 @@ namespace TimeSeries::details::iterators
 
     TimeSerieSlice& operator=(const TimeSerieSlice& other)
     {
+      assert(_NDim==other._NDim);
       std::copy(other.begin(), other.end(), this->begin());
       return *this;
     }
 
-    TimeSerieSlice& operator=(container_t<ValueType> value)
+    TimeSerieSlice& operator=(const container_t<ValueType>& value)
     {
-      std::copy(value.begin(), value.end(), this->begin());
+      std::copy(value.cbegin(), value.cend(), _container_begin<NDim>(*this));
       return *this;
     }
 

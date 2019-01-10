@@ -62,11 +62,14 @@ namespace TimeSeries
         details::iterators::TimeSerieSlice<ValueType, type, _NDim>, type>;
 
     TimeSerie() = default;
-    TimeSerie(std::size_t size) : _data(size), _t(size) {}
+    TimeSerie(std::size_t size) : _data(size), _t(size)
+    {}
 
     TimeSerie(const std::initializer_list<std::size_t>& sizes)
         : _data(_flattenSize(sizes)), _t(_flattenSize(sizes)), _shape(sizes)
-    {}
+    {
+      assert(sizes.size()==NDim);
+    }
 
     TimeSerie(container_t<double>&& t, container_t<ValueType>&& data)
         : _data{data}, _t{t}

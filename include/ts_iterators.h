@@ -43,7 +43,7 @@ namespace TimeSeries::details::iterators
     void next(int offset)
     {
       this->_position += offset;
-      this->_CurrentValue(_ts->t(_position), _ts->v(_position));
+      this->_CurrentValue._update(_ts, _position);
     }
     void prev(int offset) { next(-offset); }
 

@@ -54,26 +54,45 @@ namespace TimeSeries
     using type       = TimeSerie<ValueType, TimeSerieType, NDim, container_t>;
     using value_type = ValueType;
     using IteratorValue = details::iterators::IteratorValue<ValueType, type>;
+
     template<typename val_t, typename... args>
     using container_type = class container_t<val_t, args...>;
+
     using Iterator_t     = details::iterators::_iterator<IteratorValue, type>;
+
     template<int _NDim>
     using IteratorND_t = details::iterators::_iterator<
         details::iterators::TimeSerieSlice<ValueType, type, _NDim>, type>;
 
-    TimeSerie() = default;
+    template<typename _ValueType, typename _ts_type, int _NDim>
+    friend struct details::iterators::TimeSerieSlice;
+
+    TimeSerie()
+        :_shape(NDim,0)
+    {
+    }
+
+    template <typename Dummy = void, typename = std::enable_if_t<NDim==1, Dummy>>
     TimeSerie(std::size_t size) : _data(size), _t(size)
     {}
 
     TimeSerie(const std::initializer_list<std::size_t>& sizes)
-        : _data(_flattenSize(sizes)), _t(_flattenSize(sizes)), _shape(sizes)
+        : _data(_flattenSize(sizes)), _t(*sizes.begin()), _shape(sizes)
     {
       assert(sizes.size()==NDim);
     }
 
+    template <typename Dummy = void, typename = std::enable_if_t<NDim==1, Dummy>>
     TimeSerie(container_t<double>&& t, container_t<ValueType>&& data)
-        : _data{data}, _t{t}
-    {}
+        : _data{data}, _t{t},_shape{{t.size()}}
+    {
+    }
+
+    template <typename Dummy = void, typename = std::enable_if_t<(NDim>1), Dummy>>
+    TimeSerie(container_t<double>&& t, container_t<ValueType>&& data, const std::initializer_list<std::size_t>& sizes)
+        : _data{data}, _t{t},_shape(sizes)
+    {
+    }
 
     TimeSerie(const Iterator_t& begin, const Iterator_t& end)
     {

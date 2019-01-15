@@ -11,11 +11,11 @@
 
 namespace TimeSeries::details::iterators
 {
-  template<typename ValueType, typename ts_type>
+  template<typename ValueType, typename ts_type, bool compareValue = true>
   struct IteratorValue : public details::arithmetic::_comparable_object<
-                             IteratorValue<ValueType, ts_type>>,
+                             IteratorValue<ValueType, ts_type, compareValue>>,
                          public details::arithmetic::_addable_object<
-                             IteratorValue<ValueType, ts_type>>
+                             IteratorValue<ValueType, ts_type, compareValue>>
   {
     IteratorValue()                   = delete;
     virtual ~IteratorValue() noexcept = default;
@@ -75,9 +75,18 @@ namespace TimeSeries::details::iterators
       return *this;
     }
 
-    bool equals(const IteratorValue& other) const { return v() == other.v(); }
+    bool equals(const IteratorValue& other) const
+    {
+      return (v() == other.v()) && (t() == other.t());
+    }
 
-    bool gt(const IteratorValue& other) const { return v() > other.v(); }
+    bool gt(const IteratorValue& other) const
+    {
+      if constexpr(compareValue)
+        return v() > other.v();
+      else
+        return t() > other.t();
+    }
 
     IteratorValue iadd(IteratorValue& other)
     {
@@ -108,9 +117,11 @@ namespace TimeSeries::details::iterators
     std::reference_wrapper<ValueType> _v;
   };
 
-  template<typename ValueType, typename ts_type, int NDim = 1>
-  struct TimeSerieSlice : public details::arithmetic::_comparable_object<
-                              TimeSerieSlice<ValueType, ts_type, NDim>>
+  template<typename ValueType, typename ts_type, int NDim = 1,
+           bool compareValue = false>
+  struct TimeSerieSlice
+      : public details::arithmetic::_comparable_object<
+            TimeSerieSlice<ValueType, ts_type, NDim, compareValue>>
   {
   private:
     using Iterator_t = typename ts_type::Iterator_t;
@@ -217,6 +228,12 @@ namespace TimeSeries::details::iterators
     bool equals(const TimeSerieSlice& other) const
     {
       return std::equal(begin(), end(), other.begin());
+    }
+
+    bool gt(const TimeSerieSlice& other) const
+    {
+      static_assert(!compareValue, "don't know how to compare multi-dim value");
+      return t() > other.t();
     }
 
     double t() const { return _t; }

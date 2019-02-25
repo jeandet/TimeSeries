@@ -144,14 +144,14 @@ namespace TimeSeries
     ValueType v(const std::size_t& position) const { return _data[position]; }
     ValueType& v(const std::size_t& position) { return _data[position]; }
 
-    TimeSerieView<ByIndexIterator_t> byIndex()
+    auto byIndex()
     {
-      // if constexpr (NDim == 1)
-      return TimeSerieView(ByIndexIterator_t(this, 0),
-                           ByIndexIterator_t(this, size()));
-      //    else
-      //      return TimeSerieView(IteratorND_t<NDim - 1>(this, 0),
-      //                           IteratorND_t<NDim - 1>(this, size()));
+      if constexpr(NDim == 1)
+        return TimeSerieView(ByIndexIterator_t(this, 0),
+                             ByIndexIterator_t(this, size()));
+      else
+        return TimeSerieView(IteratorND_t<NDim - 1>(this, 0),
+                             IteratorND_t<NDim - 1>(this, size()));
     }
 
     auto begin()

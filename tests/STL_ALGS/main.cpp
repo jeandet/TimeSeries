@@ -37,7 +37,7 @@ namespace
     auto sorted =
         MyTimeSerie{{6., 5., 4., 3., 2., 1.}, {1., 2, 3., 4., 5., 6.}};
     std::sort(std::begin(s), std::end(s));
-    EXPECT_EQ(std::equal(std::begin(s), std::end(s), std::begin(sorted)), true);
+    EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(sorted)));
   }
 
   TEST(STL_ALG_GenericTS, CanBeSortedByIndex)
@@ -46,7 +46,7 @@ namespace
     auto sorted =
         MyTimeSerie{{1., 2, 3., 4., 5., 6.}, {6., 5., 4., 3., 2., 1.}};
     std::sort(std::begin(s.byIndex()), std::end(s.byIndex()));
-    EXPECT_EQ(std::equal(std::begin(s), std::end(s), std::begin(sorted)), true);
+    EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(sorted)));
   }
 
   TEST(STL_ALG_GenericTS, CanBeUsedWithGenerate)

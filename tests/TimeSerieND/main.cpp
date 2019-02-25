@@ -43,7 +43,17 @@ namespace
       EXPECT_EQ(s.size(1), 10);
       EXPECT_EQ(s.size(2), 5);
       EXPECT_EQ(std::vector<std::size_t>({100, 10, 5}), s.shape());
+      EXPECT_EQ((std::array<std::size_t, 2>({10, 5})), s.begin()->shape());
+      EXPECT_EQ((std::array<std::size_t, 1>({5})), s.begin()->begin()->shape());
     }
+  }
+
+  TEST(ATimeSerieND, HasConsistentSliceShape)
+  {
+    auto s = MyTimeSerie3d({100, 10, 5});
+    auto b = *s.begin();
+    EXPECT_EQ((std::array<std::size_t, 2>({10, 5})), b.shape());
+    EXPECT_EQ((std::array<std::size_t, 1>({5})), b.begin()->shape());
   }
 
   TEST(ATimeSerieND, CanCompyIteratorsValues)
@@ -66,6 +76,16 @@ namespace
     std::swap(*b, *(b + 1));
     EXPECT_EQ(*exp.begin(), *b);
     EXPECT_EQ(*(exp.begin() + 1), *(b + 1));
+  }
+
+  TEST(ATimeSerieND, CanBeSortedByIndex)
+  {
+    auto s = MyTimeSerie2d{
+        {6., 5., 4., 3., 2., 1.}, {1., 2, 3., 4., 5., 6.}, {1, 1}};
+    auto sorted = MyTimeSerie2d{
+        {1., 2, 3., 4., 5., 6.}, {6., 5., 4., 3., 2., 1.}, {1, 1}};
+    std::sort(std::begin(s.byIndex()), std::end(s.byIndex()));
+    EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(sorted)));
   }
 
 } // namespace

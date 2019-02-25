@@ -159,7 +159,7 @@ namespace TimeSeries::details::iterators
         : _tsd_{ts}, _position{position}, _t(ts->t(position))
     {
       _v = &ts->_data;
-      std::copy(std::begin(ts->_shape) + 1, std::end(ts->_shape),
+      std::copy(std::end(ts->_shape) - NDim, std::end(ts->_shape),
                 std::begin(_shape));
     }
 
@@ -254,12 +254,15 @@ namespace TimeSeries::details::iterators
     {
       if constexpr(NDim <= 1)
         return details::iterators::_iterator<IteratorValue<ValueType, ts_type>,
-                                             ts_type>(_tsd_, _position);
+                                             ts_type>(
+            _tsd_, _position * _shape.front());
       else
         return details::iterators::_iterator<
-            TimeSerieSlice<ValueType, ts_type, NDim - 1>, ts_type>(_tsd_,
-                                                                   _position);
+            TimeSerieSlice<ValueType, ts_type, NDim - 1>, ts_type>(
+            _tsd_, _position * _shape.front());
     }
+
+    auto shape() { return _shape; }
   };
 } // namespace TimeSeries::details::iterators
 

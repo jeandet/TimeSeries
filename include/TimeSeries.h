@@ -51,6 +51,22 @@ namespace TimeSeries
     container_t<double> _t;
     std::vector<std::size_t> _shape;
 
+    std::size_t _element_size() const
+    {
+      if constexpr(NDim > 1)
+        return std::accumulate(std::cbegin(_shape) + 1, std::cend(_shape), 1.,
+                               std::multiplies<std::size_t>());
+      else
+        return 1;
+    }
+
+    std::array<std::size_t, NDim - 1> _element_shape() const
+    {
+      std::array<std::size_t, NDim - 1> shape;
+      std::copy(std::cbegin(_shape) + 1, std::cend(_shape), std::begin(shape));
+      return shape;
+    }
+
   public:
     using type       = TimeSerie<ValueType, TimeSerieType, NDim, container_t>;
     using value_type = ValueType;
@@ -61,14 +77,16 @@ namespace TimeSeries
     template<typename val_t, typename... args>
     using container_type = class container_t<val_t, args...>;
 
-    using Iterator_t = details::iterators::_iterator<IteratorValue, type>;
+    using Iterator_t =
+        details::iterators::_iterator<IteratorValue, type, 1, true, false>;
     using ByIndexIterator_t =
-        details::iterators::_iterator<ByIndexIteratorValue, type>;
+        details::iterators::_iterator<ByIndexIteratorValue, type, 1, true,
+                                      false>;
 
     template<int _NDim>
     using IteratorND_t = details::iterators::_iterator<
-        details::iterators::TimeSerieSlice<ValueType, type, _NDim, false>,
-        type>;
+        details::iterators::TimeSerieSlice<ValueType, type, _NDim, false>, type,
+        _NDim>;
 
     template<typename _ValueType, typename _ts_type, int _NDim,
              bool compareValue>
@@ -94,8 +112,21 @@ namespace TimeSeries
     {}
 
     template<typename Dummy = void,
+             typename       = std::enable_if_t<NDim == 1, Dummy>>
+    TimeSerie(const container_t<double>& t, const container_t<ValueType>& data)
+        : _data{data}, _t{t}, _shape{{t.size()}}
+    {}
+
+    template<typename Dummy = void,
              typename       = std::enable_if_t<(NDim > 1), Dummy>>
     TimeSerie(container_t<double>&& t, container_t<ValueType>&& data,
+              const std::initializer_list<std::size_t>& sizes)
+        : _data{data}, _t{t}, _shape(sizes)
+    {}
+
+    template<typename Dummy = void,
+             typename       = std::enable_if_t<(NDim > 1), Dummy>>
+    TimeSerie(const container_t<double>& t, const container_t<ValueType>& data,
               const std::initializer_list<std::size_t>& sizes)
         : _data{data}, _t{t}, _shape(sizes)
     {}
@@ -112,7 +143,8 @@ namespace TimeSeries
         return _data[position];
       else
       {
-        return details::iterators::TimeSerieSlice<ValueType, type, NDim - 1>();
+        return details::iterators::TimeSerieSlice<ValueType, type, NDim - 1>(
+            std::begin(_data), _t[position], _element_shape());
       }
     }
 
@@ -147,26 +179,29 @@ namespace TimeSeries
     auto byIndex()
     {
       if constexpr(NDim == 1)
-        return TimeSerieView(ByIndexIterator_t(this, 0),
-                             ByIndexIterator_t(this, size()));
+        return TimeSerieView(
+            ByIndexIterator_t(std::begin(_data), 0, std::begin(_t)),
+            ByIndexIterator_t(std::begin(_data), size(), std::begin(_t)));
       else
-        return TimeSerieView(IteratorND_t<NDim - 1>(this, 0),
-                             IteratorND_t<NDim - 1>(this, size()));
+        return TimeSerieView(begin(), end());
     }
 
     auto begin()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(this, 0);
+        return Iterator_t(std::begin(_data), 0, std::begin(_t));
       else
-        return IteratorND_t<NDim - 1>(this, 0);
+        return IteratorND_t<NDim - 1>(std::begin(_data), 0, std::begin(_t),
+                                      _element_shape(), _element_size());
     }
     auto end()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(this, size());
+        return Iterator_t(std::begin(_data), size(), std::begin(_t));
       else
-        return IteratorND_t<NDim - 1>(this, size());
+        return IteratorND_t<NDim - 1>(std::begin(_data), _data.size(),
+                                      std::begin(_t), _element_shape(),
+                                      _element_size());
     }
 
     std::size_t size() const override { return _t.size(); }

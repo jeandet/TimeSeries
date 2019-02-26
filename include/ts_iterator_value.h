@@ -124,20 +124,34 @@ namespace TimeSeries::details::iterators
             TimeSerieSlice<ValueType, ts_type, NDim, compareValue>>
   {
   private:
-    using Iterator_t = typename ts_type::Iterator_t;
+    using Iterator_t = details::iterators::_iterator<
+        details::iterators::IteratorValue<ValueType, ts_type>, ts_type, 1,
+        false>;
+
+    template<int _NDim>
+    using IteratorND_t = details::iterators::_iterator<
+        details::iterators::TimeSerieSlice<ValueType, ts_type, _NDim, false>,
+        ts_type, _NDim, false>;
+
     template<typename T, typename... args>
     using container_t = typename ts_type::template container_type<T, args...>;
     using container_it_t =
         decltype(std::declval<container_t<ValueType>>().begin());
 
-    ts_type* _tsd_        = nullptr;
-    std::size_t _position = 0;
+    using sub_slice_t = TimeSerieSlice<ValueType, ts_type, NDim - 1>;
+
+    using IteratorValue = details::iterators::IteratorValue<ValueType, ts_type>;
+
+    // ts_type* _tsd_        = nullptr;
+    // std::size_t _position = 0;
     double _t_;
     container_t<ValueType>* _v = nullptr;
     std::reference_wrapper<double> _t;
     const int _NDim = NDim;
     std::array<std::size_t, NDim> _shape;
     bool _isDetached = false;
+    container_it_t _begin;
+    // container_it_t _end;
 
     std::size_t _flatSize() const
     {
@@ -153,38 +167,92 @@ namespace TimeSeries::details::iterators
         return _container_begin<dim - 1>(*t.begin());
     }
 
+    std::size_t _element_size() const
+    {
+      if constexpr(NDim > 1)
+        return std::accumulate(std::cbegin(_shape) + 1, std::cend(_shape), 1.,
+                               std::multiplies<std::size_t>());
+      else
+        return 1;
+    }
+
+    std::array<std::size_t, NDim - 1> _element_shape() const
+    {
+      std::array<std::size_t, NDim - 1> shape;
+      std::copy(std::cbegin(_shape) + 1, std::cend(_shape), std::begin(shape));
+      return shape;
+    }
+
   public:
     TimeSerieSlice() = delete;
-    TimeSerieSlice(ts_type* ts, std::size_t position)
-        : _tsd_{ts}, _position{position}, _t(ts->t(position))
-    {
-      _v = &ts->_data;
-      std::copy(std::end(ts->_shape) - NDim, std::end(ts->_shape),
-                std::begin(_shape));
-    }
+    TimeSerieSlice(const container_it_t& begin,
+                   const std::reference_wrapper<double> t,
+                   const std::array<std::size_t, NDim>& shape)
+        : _begin{begin}, _t{t}, _shape{shape}
+    {}
 
     TimeSerieSlice(const TimeSerieSlice& other)
-        : _tsd_{other._tsd_}, _position{other._position}, _t_{other.t()},
-          _t{std::ref(_t_)}, _shape{other._shape}, _isDetached{true}
+        : _t_{other.t()}, _t{std::ref(_t_)}, _shape{other._shape}
     {
       _v     = new container_t<ValueType>(other._flatSize());
-      auto s = _v->size();
-      std::copy(std::begin(*other._v), std::begin(*other._v) + _v->size(),
-                std::begin(*_v));
+      _begin = std::begin(*_v);
+      std::copy(other._begin, other._begin + _v->size(), _begin);
     }
 
-    TimeSerieSlice(TimeSerieSlice&& other)
-        : _tsd_{other._tsd_}, _position{other._position}, _t_{other.t()},
-          _t{std::ref(_t_)}, _shape{other._shape}, _isDetached{true}
+    TimeSerieSlice(TimeSerieSlice&& other) : _t{other.t()}, _shape{other._shape}
     {
-      _v = new container_t<ValueType>(other._flatSize());
-      if(other._isDetached) { std::swap(this->_v, other._v); }
+      if(other._v) { std::swap(other._v, _v); }
       else
       {
-        std::copy(std::begin(*other._v), std::begin(*other._v) + _v->size(),
-                  std::begin(*_v));
+        _v = new container_t<ValueType>(other._flatSize());
+        std::copy(other._begin, other._begin + _v->size(), std::begin(*_v));
       }
+      _begin   = std::begin(*_v);
+      _t.get() = other.t();
     }
+
+    //    TimeSerieSlice(ts_type* ts, std::size_t position)
+    //        : _tsd_{ts}, _position{position}, _t(ts->t(position))
+    //    {
+    //      _v = &ts->_data;
+    //      std::copy(std::end(ts->_shape) - NDim, std::end(ts->_shape),
+    //                std::begin(_shape));
+    //    }
+
+    //    TimeSerieSlice(container_t<ValueType>* data, double t, std::size_t
+    //    position,
+    //                   const std::array<std::size_t, NDim>& shape)
+    //        : _tsd_{nullptr}, _position{position},
+    //          _t(t), _shape{shape}, _isDetached{true}
+    //    {
+    //      _v = new container_t<ValueType>(_flatSize());
+    //      std::copy(std::begin(*data), std::begin(*data) + _v->size(),
+    //                std::begin(*_v));
+    //    }
+
+    //    TimeSerieSlice(const TimeSerieSlice& other)
+    //        : _tsd_{other._tsd_}, _position{other._position}, _t_{other.t()},
+    //          _t{std::ref(_t_)}, _shape{other._shape}, _isDetached{true}
+    //    {
+    //      _v     = new container_t<ValueType>(other._flatSize());
+    //      auto s = _v->size();
+    //      std::copy(std::begin(*other._v), std::begin(*other._v) + _v->size(),
+    //                std::begin(*_v));
+    //    }
+
+    //    TimeSerieSlice(TimeSerieSlice&& other)
+    //        : _tsd_{nullptr}, _position{0}, _t_{other.t()}, _t{std::ref(_t_)},
+    //          _shape{other._shape}, _isDetached{true}
+    //    {
+    //      _v = new container_t<ValueType>(other._flatSize());
+    //      if(other._isDetached) { std::swap(this->_v, other._v); }
+    //      else
+    //      {
+    //        std::copy(std::begin(*other._v), std::begin(*other._v) +
+    //        _v->size(),
+    //                  std::begin(*_v));
+    //      }
+    //    }
 
     ~TimeSerieSlice()
     {
@@ -194,29 +262,42 @@ namespace TimeSeries::details::iterators
     TimeSerieSlice& operator=(const TimeSerieSlice& other)
     {
       assert(_NDim == other._NDim);
-      std::copy(other.begin(), other.end(), this->begin());
+      assert(_flatSize() == other._flatSize());
+      std::copy(other._begin, other._begin + other._flatSize(), this->_begin);
       _t.get() = other.t();
       return *this;
     }
 
-    TimeSerieSlice& operator=(const TimeSerieSlice&& other)
+    TimeSerieSlice& operator=(TimeSerieSlice&& other)
     {
       assert(_NDim == other._NDim);
-      std::copy(other.begin(), other.end(), this->begin());
+      assert(_flatSize() == other._flatSize());
+      if(other._v)
+      {
+        _v       = other._v;
+        other._v = nullptr;
+      }
+      else
+      {
+        _v = new container_t<ValueType>(other._flatSize());
+        std::copy(other._begin, other._begin + _v->size(), std::begin(*_v));
+      }
+      _begin   = std::begin(*_v);
       _t.get() = other.t();
       return *this;
     }
 
-    void _update(ts_type* ts, std::size_t position)
+    void _update(const container_it_t& begin)
     {
       [[unlikely]] if(_isDetached)
       {
         delete _v;
         _isDetached = false;
       }
-      _v        = &ts->_data;
-      _tsd_     = ts;
-      _position = position;
+      _begin = begin;
+      //      _v        = &ts->_data;
+      //      _tsd_     = ts;
+      //      _position = position;
     }
 
     TimeSerieSlice& operator=(const container_t<ValueType>& value)
@@ -227,7 +308,7 @@ namespace TimeSeries::details::iterators
 
     bool equals(const TimeSerieSlice& other) const
     {
-      return std::equal(begin(), end(), other.begin());
+      return std::equal(_begin, _begin + _flatSize(), other._begin);
     }
 
     bool gt(const TimeSerieSlice& other) const
@@ -241,25 +322,33 @@ namespace TimeSeries::details::iterators
 
     auto begin() const
     {
-      if constexpr(NDim <= 1)
-        return details::iterators::_iterator<IteratorValue<ValueType, ts_type>,
-                                             ts_type>(_tsd_, _position);
+      if constexpr(NDim <= 1) { return Iterator_t(_begin, 0, _t); }
       else
-        return details::iterators::_iterator<
-            TimeSerieSlice<ValueType, ts_type, NDim - 1>, ts_type>(_tsd_,
-                                                                   _position);
+      {
+        return IteratorND_t<NDim - 1>(_begin, 0, _t, _element_shape(),
+                                      _element_size());
+      }
     }
 
     auto end() const
     {
-      if constexpr(NDim <= 1)
-        return details::iterators::_iterator<IteratorValue<ValueType, ts_type>,
-                                             ts_type>(
-            _tsd_, _position * _shape.front());
+      if constexpr(NDim <= 1) { return Iterator_t(_begin, _flatSize(), _t); }
       else
-        return details::iterators::_iterator<
-            TimeSerieSlice<ValueType, ts_type, NDim - 1>, ts_type>(
-            _tsd_, _position * _shape.front());
+      {
+        return IteratorND_t<NDim - 1>(_begin, _flatSize(), _t, _element_shape(),
+                                      _element_size());
+      }
+    }
+
+    auto operator[](const std::size_t& position)
+    {
+      if constexpr(NDim == 1)
+        return *(_begin + (position * _element_size()));
+      else
+      {
+        return sub_slice_t(_begin + position * _element_size(), _t,
+                           _element_shape());
+      }
     }
 
     auto shape() { return _shape; }

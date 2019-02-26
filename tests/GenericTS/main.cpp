@@ -85,6 +85,20 @@ namespace
     }
   }
 
+  TEST(AGenericTS, HasConsistentItemIndexes)
+  {
+    std::vector<double> data(100);
+    std::generate(std::begin(data), std::end(data), []() {
+      static double i = 0;
+      return i++;
+    });
+    auto s = TimeSeries::ScalarTs(data, data);
+    for(int i = 0; i < s.shape()[0]; i++)
+    {
+      EXPECT_EQ(double(i), s[i]);
+    }
+  }
+
 } // namespace
 
 int main(int argc, char** argv)

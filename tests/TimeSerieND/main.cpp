@@ -23,7 +23,7 @@ namespace
 
   TEST(ATimeSerieND, CanCompareIterators)
   {
-    auto s   = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {3, 1});
+    auto s   = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {1, 1});
     auto it1 = s.begin();
     EXPECT_EQ(it1, s.begin());
     EXPECT_NE(it1, s.begin() + 1);
@@ -56,9 +56,52 @@ namespace
     EXPECT_EQ((std::array<std::size_t, 1>({5})), b.begin()->shape());
   }
 
+  TEST(ATimeSerieND, HasConsistentItemIndexes)
+  {
+    {
+      std::vector<double> data(100 * 10);
+      std::generate(std::begin(data), std::end(data), []() {
+        static double i = 0;
+        return i++;
+      });
+      auto s       = MyTimeSerie2d(data, data, {100, 10});
+      double value = 0.;
+      for(std::size_t i = 0; i < s.shape()[0]; i++)
+      {
+        for(std::size_t j = 0; j < s.shape()[1]; j++)
+        {
+          EXPECT_EQ(value++, s[i][j]);
+        }
+      }
+    }
+    {
+      std::vector<double> data(100 * 10 * 5);
+      std::generate(std::begin(data), std::end(data), []() {
+        static double i = 0;
+        return i++;
+      });
+      auto s       = MyTimeSerie3d(data, data, {100, 10, 5});
+      double value = 0.;
+      for(std::size_t i = 0; i < s.shape()[0]; i++)
+      {
+        auto b1 = *(s.begin() + i);
+        for(std::size_t j = 0; j < s.shape()[1]; j++)
+        {
+          auto b2 = *(b1.begin() + j);
+          for(std::size_t k = 0; k < s.shape()[2]; k++)
+          {
+            auto b3 = *(b2.begin() + k);
+            EXPECT_EQ(value, s[i][j][k]);
+            EXPECT_EQ(b3.v(), value++);
+          }
+        }
+      }
+    }
+  }
+
   TEST(ATimeSerieND, CanCompyIteratorsValues)
   {
-    auto s  = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {3, 1});
+    auto s  = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {1, 1});
     auto it = s.begin();
     auto v  = *it;
     auto v2 = v;
@@ -66,6 +109,23 @@ namespace
     EXPECT_EQ(v, v2);
     auto v3 = std::move(v);
     EXPECT_EQ(v3, v2);
+  }
+
+  template<typename T> void m_swap(T& t1, T& t2)
+  {
+    T temp = std::move(t1); // or T temp(std::move(t1));
+    t1     = std::move(t2);
+    t2     = std::move(temp);
+  }
+
+  TEST(ATimeSerieND, CanSwapTwoValuesStepByStep)
+  {
+    auto s   = MyTimeSerie2d({0., 1.}, {33., 22.}, {1, 1});
+    auto exp = MyTimeSerie2d({1., 0.}, {22., 33.}, {1, 1});
+    auto b   = s.begin();
+    m_swap(*b, *(b + 1));
+    EXPECT_EQ(*exp.begin(), *b);
+    EXPECT_EQ(*(exp.begin() + 1), *(b + 1));
   }
 
   TEST(ATimeSerieND, CanSwapTwoValues)

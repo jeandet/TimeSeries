@@ -1,15 +1,18 @@
 #ifndef TS_ITERATORS_H
 #define TS_ITERATORS_H
+#include <array>
+#include <functional>
 #include <iterator>
 #include <ts_arithmetic.h>
 
 namespace TimeSeries::details::iterators
 {
-  template<typename itValue_t, class ts_t, bool isConst = false>
+  template<typename itValue_t, typename ts_t, int NDim, bool iterTime = true,
+           bool isConst = false>
   struct _iterator : public details::arithmetic::_incrementable_object<
-                         _iterator<itValue_t, ts_t, isConst>>,
+                         _iterator<itValue_t, ts_t, NDim, iterTime, isConst>>,
                      public details::arithmetic::_comparable_object<
-                         _iterator<itValue_t, ts_t, isConst>>
+                         _iterator<itValue_t, ts_t, NDim, iterTime, isConst>>
   {
     using iterator_category = std::random_access_iterator_tag;
     using value_type =
@@ -17,15 +20,56 @@ namespace TimeSeries::details::iterators
     using difference_type = std::ptrdiff_t;
     using pointer         = value_type*;
     using reference       = value_type&;
+    template<typename T, typename... args>
+    using container_t = typename ts_t::template container_type<T, args...>;
 
-    explicit _iterator(ts_t* ts, std::size_t pos)
-        : _ts{ts}, _CurrentValue{ts, pos}, _position{pos}
+    using raw_value_it_t = decltype(
+        std::declval<container_t<typename ts_t::value_type>>().begin());
+
+    using time_it_t = decltype(std::declval<container_t<double>>().begin());
+
+    //    explicit _iterator(ts_t* ts, std::size_t pos, std::size_t increment =
+    //    1)
+    //        : _ts{ts}, _CurrentValue{ts, pos}, _position{pos},
+    //        _increment{increment}
+    //    {}
+
+    //    explicit _iterator(const value_type& value, std::size_t pos,
+    //                       std::size_t increment = 1)
+    //        : _ts{nullptr}, _CurrentValue{value}, _position{pos}, _increment{
+    //                                                                  increment}
+    //    {}
+
+    explicit _iterator(const raw_value_it_t& begin, std::size_t pos,
+                       const time_it_t& t_begin,
+                       const std::array<std::size_t, NDim>& shape,
+                       std::size_t increment)
+        : _begin{begin}, _t_begin{t_begin},
+          _CurrentValue{begin, *t_begin, shape}, _position{pos}, _increment{
+                                                                     increment}
     {}
 
-    _iterator(const _iterator& other)
-        : _ts{other._ts},
-          _CurrentValue{other._ts, other._position}, _position{other._position}
+    explicit _iterator(const raw_value_it_t& begin, std::size_t pos, double& t,
+                       const std::array<std::size_t, NDim>& shape,
+                       std::size_t increment)
+        : _begin{begin}, _CurrentValue{begin, t, shape}, _position{pos},
+          _increment{increment}
     {}
+
+    explicit _iterator(const raw_value_it_t& begin, std::size_t pos,
+                       const time_it_t& t_begin)
+        : _begin{begin}, _t_begin{t_begin},
+          _CurrentValue{*t_begin, *begin}, _position{pos}, _increment{1}
+    {}
+
+    explicit _iterator(const raw_value_it_t& begin, std::size_t pos, double& t)
+        : _begin{begin}, _CurrentValue{t, *begin}, _position{pos}, _increment{1}
+    {}
+
+    //    _iterator(const _iterator& other)
+    //        : _begin{other._begin}, _t_begin{other._t_begin},
+    //          _position{other._position}, _increment{other._increment}
+    //    {}
 
     virtual ~_iterator() noexcept = default;
 
@@ -42,8 +86,8 @@ namespace TimeSeries::details::iterators
 
     void next(int offset)
     {
-      this->_position += offset;
-      this->_CurrentValue._update(_ts, _position);
+      this->_position += offset * _increment;
+      // this->_CurrentValue._update(_ts, _position);
     }
     void prev(int offset) { next(-offset); }
 
@@ -59,7 +103,7 @@ namespace TimeSeries::details::iterators
 
     std::size_t distance(const _iterator& other) const
     {
-      return _position - other._position;
+      return (_position - other._position) / _increment;
     }
 
     const itValue_t* operator->() const { return &_CurrentValue; }
@@ -72,9 +116,12 @@ namespace TimeSeries::details::iterators
     }
 
   private:
-    ts_t* _ts;
+    // ts_t* _ts;
+    raw_value_it_t _begin;
+    time_it_t _t_begin;
     itValue_t _CurrentValue;
     std::size_t _position;
+    std::size_t _increment = 1;
   };
 } // namespace TimeSeries::details::iterators
 

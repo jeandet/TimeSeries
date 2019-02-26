@@ -28,18 +28,6 @@ namespace TimeSeries::details::iterators
 
     using time_it_t = decltype(std::declval<container_t<double>>().begin());
 
-    //    explicit _iterator(ts_t* ts, std::size_t pos, std::size_t increment =
-    //    1)
-    //        : _ts{ts}, _CurrentValue{ts, pos}, _position{pos},
-    //        _increment{increment}
-    //    {}
-
-    //    explicit _iterator(const value_type& value, std::size_t pos,
-    //                       std::size_t increment = 1)
-    //        : _ts{nullptr}, _CurrentValue{value}, _position{pos}, _increment{
-    //                                                                  increment}
-    //    {}
-
     explicit _iterator(const raw_value_it_t& begin, std::size_t pos,
                        const time_it_t& t_begin,
                        const std::array<std::size_t, NDim>& shape,
@@ -66,10 +54,10 @@ namespace TimeSeries::details::iterators
         : _begin{begin}, _CurrentValue{t, *begin}, _position{pos}, _increment{1}
     {}
 
-    //    _iterator(const _iterator& other)
-    //        : _begin{other._begin}, _t_begin{other._t_begin},
-    //          _position{other._position}, _increment{other._increment}
-    //    {}
+//    _iterator(const _iterator& other)
+//        : _begin{other._begin}, _t_begin{other._t_begin},
+//          _position{other._position}, _increment{other._increment}
+//    {}
 
     virtual ~_iterator() noexcept = default;
 
@@ -87,7 +75,15 @@ namespace TimeSeries::details::iterators
     void next(int offset)
     {
       this->_position += offset * _increment;
-      // this->_CurrentValue._update(_ts, _position);
+      if constexpr(iterTime)
+      {
+        this->_CurrentValue._update(*(_t_begin + (_position / _increment)),
+                                    _begin + _position);
+      }
+      else
+      {
+        this->_CurrentValue._update(_begin + _position);
+      }
     }
     void prev(int offset) { next(-offset); }
 
@@ -116,7 +112,6 @@ namespace TimeSeries::details::iterators
     }
 
   private:
-    // ts_t* _ts;
     raw_value_it_t _begin;
     time_it_t _t_begin;
     itValue_t _CurrentValue;

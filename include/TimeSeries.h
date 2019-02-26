@@ -144,7 +144,7 @@ namespace TimeSeries
       else
       {
         return details::iterators::TimeSerieSlice<ValueType, type, NDim - 1>(
-            std::begin(_data), _t[position], _element_shape());
+            std::begin(_data)+(position*_element_size()), _t[position], _element_shape());
       }
     }
 

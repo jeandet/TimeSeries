@@ -28,78 +28,98 @@ namespace TimeSeries::details::iterators
 
     using time_it_t = decltype(std::declval<container_t<double>>().begin());
 
-    explicit _iterator(const raw_value_it_t& begin, std::size_t pos,
-                       const time_it_t& t_begin,
+    explicit _iterator(const raw_value_it_t& it, const time_it_t& time_it,
                        const std::array<std::size_t, NDim>& shape,
                        std::size_t increment)
-        : _begin{begin}, _t_begin{t_begin},
-          _CurrentValue{begin, *t_begin, shape}, _position{pos}, _increment{
-                                                                     increment}
+        : _raw_values_it{it}, _time_it{time_it}, _CurrentValue{it, *time_it,
+                                                               shape},
+          /*_position{pos * increment},*/ _increment{increment}
     {}
 
-    explicit _iterator(const raw_value_it_t& begin, std::size_t pos, double& t,
+    explicit _iterator(const raw_value_it_t& it, double& t,
                        const std::array<std::size_t, NDim>& shape,
                        std::size_t increment)
-        : _begin{begin}, _CurrentValue{begin, t, shape}, _position{pos},
-          _increment{increment}
+        : _raw_values_it{it}, _CurrentValue{it, t, shape},
+          /*_position{pos * increment},*/ _increment{increment}
     {}
 
-    explicit _iterator(const raw_value_it_t& begin, std::size_t pos,
-                       const time_it_t& t_begin)
-        : _begin{begin}, _t_begin{t_begin},
-          _CurrentValue{*t_begin, *begin}, _position{pos}, _increment{1}
+    explicit _iterator(const raw_value_it_t& it, const time_it_t& time_it)
+        : _raw_values_it{it}, _time_it{time_it}, _CurrentValue{*time_it, *it},
+          /*_position{pos},*/ _increment{1}
     {}
 
-    explicit _iterator(const raw_value_it_t& begin, std::size_t pos, double& t)
-        : _begin{begin}, _CurrentValue{t, *begin}, _position{pos}, _increment{1}
+    explicit _iterator(const raw_value_it_t& it, double& t)
+        : _raw_values_it{it}, _CurrentValue{t, *it},
+          /*_position{pos},*/ _increment{1}
     {}
 
-//    _iterator(const _iterator& other)
-//        : _begin{other._begin}, _t_begin{other._t_begin},
-//          _position{other._position}, _increment{other._increment}
-//    {}
+    template<int N             = NDim,
+             typename MultiDim = typename std::enable_if_t<NDim >= 2>,
+             typename P        = MultiDim>
+    _iterator(const _iterator& other)
+        : _raw_values_it{other._begin}, _CurrentValue{other, true},
+          _time_it{other._t_begin}, /*_position{other._position},*/
+          _increment{other._increment}
+    {}
+
+    template<int N           = NDim,
+             typename oneDim = typename std::enable_if_t<NDim == 1>>
+    _iterator(const _iterator& other)
+        : _raw_values_it{other._begin}, _CurrentValue{other, true},
+          _time_it{other._t_begin} /*, _position{other._position}*/,
+          _increment{other._increment}
+    {}
 
     virtual ~_iterator() noexcept = default;
 
-    _iterator& operator=(_iterator other)
+    _iterator& operator=(const _iterator& other)
     {
-      std::swap(_CurrentValue, other._CurrentValue);
+      _time_it       = other._time_it;
+      _raw_values_it = other._raw_values_it;
+      _increment     = other._increment;
+      next(0);
       return *this;
     }
 
-    friend void swap(const _iterator& lhs, const _iterator& rhs)
+    friend void swap(_iterator& lhs, _iterator& rhs)
     {
-      std::swap(lhs._CurrentValue, rhs._CurrentValue);
+      // std::swap(lhs._CurrentValue, rhs._CurrentValue);
+      std::swap(lhs._time_it, rhs._time_it);
+      std::swap(lhs._raw_values_it, rhs._raw_values_it);
+      std::swap(lhs._increment, rhs._increment);
+      lhs.next(0);
+      rhs.next(0);
     }
 
     void next(int offset)
     {
-      this->_position += offset * _increment;
+      this->_raw_values_it += offset * _increment;
       if constexpr(iterTime)
       {
-        this->_CurrentValue._update(*(_t_begin + (_position / _increment)),
-                                    _begin + _position);
+        this->_time_it += offset;
+        this->_CurrentValue._update(*_time_it, _raw_values_it);
       }
       else
       {
-        this->_CurrentValue._update(_begin + _position);
+        this->_CurrentValue._update(_raw_values_it);
       }
     }
+
     void prev(int offset) { next(-offset); }
 
     bool equals(const _iterator& other) const
     {
-      return _position == other._position;
+      return _raw_values_it == other._raw_values_it;
     }
 
     bool gt(const _iterator& other) const
     {
-      return _position > other._position;
+      return _raw_values_it > other._raw_values_it;
     }
 
     std::size_t distance(const _iterator& other) const
     {
-      return (_position - other._position) / _increment;
+      return std::distance(other._raw_values_it, _raw_values_it) / _increment;
     }
 
     const itValue_t* operator->() const { return &_CurrentValue; }
@@ -112,10 +132,9 @@ namespace TimeSeries::details::iterators
     }
 
   private:
-    raw_value_it_t _begin;
-    time_it_t _t_begin;
+    raw_value_it_t _raw_values_it;
+    time_it_t _time_it;
     itValue_t _CurrentValue;
-    std::size_t _position;
     std::size_t _increment = 1;
   };
 } // namespace TimeSeries::details::iterators

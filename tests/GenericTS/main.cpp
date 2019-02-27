@@ -51,7 +51,7 @@ namespace
     EXPECT_NE(it1, s.begin() + 1);
   }
 
-  TEST(AGenericTS, CanCompyIteratorsValues)
+  TEST(AGenericTS, CanCompareIteratorsValues)
   {
     auto s  = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
     auto it = s.begin();
@@ -59,6 +59,8 @@ namespace
     auto v2 = v;
     EXPECT_EQ(v, *it);
     EXPECT_EQ(v, v2);
+    EXPECT_GT(*it, *(it + 1));
+    EXPECT_LT(*(it + 1), *it);
     auto v3 = std::move(v);
     EXPECT_EQ(v3, v2);
   }
@@ -70,6 +72,32 @@ namespace
     EXPECT_EQ(it->v(), 33.);
     *it = 1234.;
     EXPECT_EQ(it->v(), 1234.);
+  }
+
+  TEST(AGenericTS, CanSetValue)
+  {
+    auto s   = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
+    auto it  = s.end();
+    auto it2 = s.begin();
+    it       = it2;
+    auto v   = *it;
+    EXPECT_DOUBLE_EQ(v.v(), 33.);
+    EXPECT_DOUBLE_EQ(v.t(), 0.);
+    *it = 1234.;
+    EXPECT_DOUBLE_EQ(it->v(), 1234.);
+    *it = v;
+    EXPECT_DOUBLE_EQ(it->v(), 33.);
+    *it = *(it + 1);
+    EXPECT_DOUBLE_EQ(it->v(), 22.);
+    v = 5555.;
+    EXPECT_DOUBLE_EQ(it->v(), 22.);
+    EXPECT_DOUBLE_EQ(std::begin(s)->v(), 22.);
+  }
+
+  TEST(AGenericTS, CanGetDistanceFromIterators)
+  {
+    auto s = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
+    EXPECT_EQ(3, std::distance(std::begin(s), std::end(s)));
   }
 
   TEST(AGenericTS, CanRangeBasedLoopIterators)

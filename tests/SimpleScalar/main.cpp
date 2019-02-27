@@ -71,8 +71,8 @@ namespace
                    });
     auto min = std::min_element(std::begin(s), std::end(s));
     auto max = std::max_element(std::begin(s), std::end(s));
-    EXPECT_EQ(1., min->v());
-    EXPECT_EQ(1., max->v());
+    EXPECT_DOUBLE_EQ(1., min->v());
+    EXPECT_DOUBLE_EQ(1., max->v());
   }
 
 } // namespace

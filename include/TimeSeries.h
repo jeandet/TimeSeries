@@ -144,7 +144,8 @@ namespace TimeSeries
       else
       {
         return details::iterators::TimeSerieSlice<ValueType, type, NDim - 1>(
-            std::begin(_data)+(position*_element_size()), _t[position], _element_shape());
+            std::begin(_data) + (position * _element_size()), _t[position],
+            _element_shape());
       }
     }
 
@@ -180,8 +181,8 @@ namespace TimeSeries
     {
       if constexpr(NDim == 1)
         return TimeSerieView(
-            ByIndexIterator_t(std::begin(_data), 0, std::begin(_t)),
-            ByIndexIterator_t(std::begin(_data), size(), std::begin(_t)));
+            ByIndexIterator_t(std::begin(_data), std::begin(_t)),
+            ByIndexIterator_t(std::end(_data), std::end(_t)));
       else
         return TimeSerieView(begin(), end());
     }
@@ -189,19 +190,18 @@ namespace TimeSeries
     auto begin()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(std::begin(_data), 0, std::begin(_t));
+        return Iterator_t(std::begin(_data), std::begin(_t));
       else
-        return IteratorND_t<NDim - 1>(std::begin(_data), 0, std::begin(_t),
+        return IteratorND_t<NDim - 1>(std::begin(_data), std::begin(_t),
                                       _element_shape(), _element_size());
     }
     auto end()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(std::begin(_data), size(), std::begin(_t));
+        return Iterator_t(std::end(_data), std::end(_t));
       else
-        return IteratorND_t<NDim - 1>(std::begin(_data), _data.size(),
-                                      std::begin(_t), _element_shape(),
-                                      _element_size());
+        return IteratorND_t<NDim - 1>(std::end(_data), std::end(_t),
+                                      _element_shape(), _element_size());
     }
 
     std::size_t size() const override { return _t.size(); }

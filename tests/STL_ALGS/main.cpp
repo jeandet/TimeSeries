@@ -33,7 +33,7 @@ namespace
 
   TEST(STL_ALG_GenericTS, CanBeSortedByValues)
   {
-    auto s = MyTimeSerie{{1., 2, 3., 4., 5., 6.}, {6., 5., 4., 3., 2., 1.}};
+    auto s = MyTimeSerie{{2., 1, 3., 4., 5., 6.}, {5., 6., 4., 3., 2., 1.}};
     auto sorted =
         MyTimeSerie{{6., 5., 4., 3., 2., 1.}, {1., 2, 3., 4., 5., 6.}};
     std::sort(std::begin(s), std::end(s));
@@ -88,7 +88,7 @@ namespace
     EXPECT_EQ(0., r.begin()->v());
     for(const auto& slice : r[{1, r.size()}])
     {
-      EXPECT_EQ(1., slice.v());
+      EXPECT_DOUBLE_EQ(1., slice.v());
     }
   }
 

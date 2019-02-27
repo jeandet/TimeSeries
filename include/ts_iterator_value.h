@@ -29,9 +29,9 @@ namespace TimeSeries::details::iterators
         : _t{std::ref(t)}, _v{std::ref(v)}
     {}
 
-    explicit IteratorValue(ts_type* ts, std::size_t position)
-        : _t(ts->t(position)), _v(ts->v(position))
-    {}
+    //    explicit IteratorValue(ts_type* ts, std::size_t position)
+    //        : _t(ts->t(position)), _v(ts->v(position))
+    //    {}
 
     IteratorValue(IteratorValue&& other)
         : _t_{other.t()}, _v_{other.v()}, _t{std::ref(_t_)}, _v{std::ref(_v_)}
@@ -194,6 +194,13 @@ namespace TimeSeries::details::iterators
         : _begin{begin}, _t{t}, _shape{shape}
     {}
 
+    TimeSerieSlice(const TimeSerieSlice& other, bool do_not_detach)
+        : _begin{other._begin}, _t_{other._t_}, _t{other._t}, _shape{
+                                                                  other._shape}
+    {
+      assert(do_not_detach == true);
+    }
+
     TimeSerieSlice(const TimeSerieSlice& other)
         : _t_{other.t()}, _t{std::ref(_t_)}, _shape{other._shape}
     {
@@ -283,21 +290,21 @@ namespace TimeSeries::details::iterators
 
     auto begin() const
     {
-      if constexpr(NDim <= 1) { return Iterator_t(_begin, 0, _t); }
+      if constexpr(NDim <= 1) { return Iterator_t(_begin, _t); }
       else
       {
-        return IteratorND_t<NDim - 1>(_begin, 0, _t, _element_shape(),
+        return IteratorND_t<NDim - 1>(_begin, _t, _element_shape(),
                                       _element_size());
       }
     }
 
     auto end() const
     {
-      if constexpr(NDim <= 1) { return Iterator_t(_begin, _flatSize(), _t); }
+      if constexpr(NDim <= 1) { return Iterator_t(_begin + _flatSize(), _t); }
       else
       {
-        return IteratorND_t<NDim - 1>(_begin, _flatSize(), _t, _element_shape(),
-                                      _element_size());
+        return IteratorND_t<NDim - 1>(_begin + _flatSize(), _t,
+                                      _element_shape(), _element_size());
       }
     }
 

@@ -15,6 +15,7 @@ namespace TimeSeries::details::iterators
                      public details::arithmetic::_comparable_object<
                          _iterator<itValue_t, ts_t, NDim, iterTime, isConst>>
   {
+    friend ts_t;
     using iterator_category = std::random_access_iterator_tag;
     using value_type =
         typename std::conditional<isConst, const itValue_t, itValue_t>::type;
@@ -25,7 +26,7 @@ namespace TimeSeries::details::iterators
     using container_t = typename ts_t::template container_type<T, args...>;
 
     using raw_value_it_t = decltype(
-        std::declval<container_t<typename ts_t::value_type>>().begin());
+        std::declval<container_t<typename ts_t::raw_value_type>>().begin());
 
     using time_it_t = decltype(std::declval<container_t<double>>().begin());
 
@@ -128,7 +129,7 @@ namespace TimeSeries::details::iterators
       return _CurrentValue.advance(offset);
     }
 
-  private:
+  protected:
     raw_value_it_t _raw_values_it;
     time_it_t _time_it;
     itValue_t _CurrentValue;

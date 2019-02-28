@@ -110,6 +110,17 @@ namespace
     EXPECT_EQ(3, std::distance(std::begin(s), std::end(s)));
   }
 
+  TEST(AGenericTS, CanPushBackValues)
+  {
+    TimeSeries::ScalarTs s;
+    s.push_back(std::pair{1., 15.2});
+    s.push_back(std::pair{2., 9.});
+    EXPECT_EQ(2, std::distance(std::begin(s), std::end(s)));
+    EXPECT_EQ(2, s.size());
+    EXPECT_DOUBLE_EQ(15.2, s.begin()->v());
+    EXPECT_DOUBLE_EQ(1., s.begin()->t());
+  }
+
   TEST(AGenericTS, CanRangeBasedLoopIterators)
   {
     auto s = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});

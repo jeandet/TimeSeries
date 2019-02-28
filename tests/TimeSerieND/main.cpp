@@ -99,6 +99,14 @@ namespace
     }
   }
 
+  TEST(ATimeSerieND, CanBackInsertValues)
+  {
+    auto s    = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {1, 1});
+    auto dest = MyTimeSerie2d({0, 1}); // TODO not sure about this...
+    std::copy(std::begin(s), std::end(s), std::back_inserter(dest));
+    EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(dest)));
+  }
+
   TEST(ATimeSerieND, CanCompyIteratorsValues)
   {
     auto s  = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {1, 1});

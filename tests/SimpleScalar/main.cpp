@@ -61,7 +61,7 @@ namespace
       auto x = sin(i) * sin(i);
       auto y = cos(i) * sin(i);
       auto z = cos(i);
-      return std::pair{i, TimeSeries::VectorTs::value_type{x, y, z}};
+      return std::pair{i, TimeSeries::VectorTs::raw_value_type{x, y, z}};
     });
     std::transform(std::begin(v), std::end(v), std::begin(s),
                    [](const auto& item) {

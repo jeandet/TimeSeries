@@ -30,6 +30,11 @@ namespace TimeSeries::details::iterators
         : _t{std::ref(t)}, _v{std::ref(v)}
     {}
 
+    IteratorValue(const std::pair<double, ValueType>& value)
+        : _t_{value.first}, _v_{value.second}, _t{std::ref(_t_)}, _v{std::ref(
+                                                                      _v_)}
+    {}
+
     explicit IteratorValue(const IteratorValue& other, bool do_not_detach)
         : _t{other._t}, _v{other._v}
     {
@@ -342,6 +347,12 @@ namespace TimeSeries::details::iterators
                                       _element_shape(), _element_size());
       }
     }
+
+    auto flat_begin() { return _begin; }
+    auto flat_begin() const { return _begin; }
+
+    auto flat_end() { return _begin + _flatSize(); }
+    auto flat_end() const { return _begin + _flatSize(); }
 
     auto operator[](const std::size_t& position)
     {

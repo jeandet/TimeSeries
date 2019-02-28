@@ -22,31 +22,56 @@ namespace TimeSeries::details::iterators
     using container_it_t =
         decltype(std::declval<container_t<ValueType>>().begin());
 
-    IteratorValue()                   = delete;
+    IteratorValue() : _t_{0.}, _v_{0.}, _t{std::ref(_t_)}, _v{std::ref(_v_)} {}
+
     virtual ~IteratorValue() noexcept = default;
 
     explicit IteratorValue(double& t, ValueType& v)
         : _t{std::ref(t)}, _v{std::ref(v)}
     {}
 
-    //    explicit IteratorValue(ts_type* ts, std::size_t position)
-    //        : _t(ts->t(position)), _v(ts->v(position))
-    //    {}
+    explicit IteratorValue(const IteratorValue& other, bool do_not_detach)
+        : _t{other._t}, _v{other._v}
+    {
+      assert(do_not_detach == true);
+    }
 
+    /**
+     * @brief IteratorValue rvalue copy ctor, this means that a value is built
+     * outside of an iterator and should be detached from any container
+     * @param other
+     */
     IteratorValue(IteratorValue&& other)
         : _t_{other.t()}, _v_{other.v()}, _t{std::ref(_t_)}, _v{std::ref(_v_)}
     {}
 
+    /**
+     * @brief IteratorValue copy ctor, this means that a value is built
+     * outside of an iterator and should be detached from any container
+     * @param other
+     */
     IteratorValue(const IteratorValue& other)
         : _t_{other.t()}, _v_{other.v()}, _t{std::ref(_t_)}, _v{std::ref(_v_)}
     {}
 
+    /**
+     * @brief _update updates value and time pointing refs, must be called from
+     * an iterator!
+     * @param t
+     * @param begin
+     */
     void _update(double& t, const container_it_t& begin)
     {
       _t = std::ref(t);
       _update(begin);
     }
 
+    /**
+     * @brief _update updates value pointing ref, must be called from an
+     * iterator!
+     * @param t
+     * @param begin
+     */
     void _update(const container_it_t& begin) { _v = std::ref(*begin); }
 
     IteratorValue& operator=(const IteratorValue& other)
@@ -97,14 +122,14 @@ namespace TimeSeries::details::iterators
 
     IteratorValue iadd(IteratorValue& other)
     {
-      _t.get() += other.v();
+      //_t.get() += other.v();
       return *this;
     }
 
     ValueType v() const { return _v.get(); }
     ValueType& v() { return _v.get(); }
-    double t() const { return _t; }
-    double& t() { return _t; }
+    double t() const { return _t.get(); }
+    double& t() { return _t.get(); }
 
     template<typename T> constexpr auto wrap(T pos, T size)
     {
@@ -132,7 +157,7 @@ namespace TimeSeries::details::iterators
   {
   private:
     using Iterator_t = details::iterators::_iterator<
-        details::iterators::IteratorValue<ValueType, ts_type>, ts_type, 1,
+        details::iterators::IteratorValue<ValueType, ts_type>, ts_type, 0,
         false>;
 
     template<int _NDim>
@@ -187,11 +212,12 @@ namespace TimeSeries::details::iterators
     }
 
   public:
-    TimeSerieSlice() = delete;
-    TimeSerieSlice(const container_it_t& begin,
-                   const std::reference_wrapper<double> t,
+    TimeSerieSlice()
+        : _t_{0.}, _v{new container_t<ValueType>}, _t{std::ref(_t_)}
+    {}
+    TimeSerieSlice(double& t, const container_it_t& begin,
                    const std::array<std::size_t, NDim>& shape)
-        : _begin{begin}, _t{t}, _shape{shape}
+        : _begin{begin}, _t{std::ref(t)}, _shape{shape}
     {}
 
     TimeSerieSlice(const TimeSerieSlice& other, bool do_not_detach)
@@ -229,7 +255,16 @@ namespace TimeSeries::details::iterators
     TimeSerieSlice& operator=(const TimeSerieSlice& other)
     {
       assert(_NDim == other._NDim);
-      assert(_flatSize() == other._flatSize());
+      if(_v)
+      {
+        _v->resize(other._flatSize());
+        _shape       = other._shape;
+        this->_begin = std::begin(*_v);
+      }
+      else
+      {
+        assert(_flatSize() == other._flatSize());
+      }
       std::copy(other._begin, other._begin + other._flatSize(), this->_begin);
       _t.get() = other.t();
       return *this;
@@ -290,20 +325,20 @@ namespace TimeSeries::details::iterators
 
     auto begin() const
     {
-      if constexpr(NDim <= 1) { return Iterator_t(_begin, _t); }
+      if constexpr(NDim == 1) { return Iterator_t(_t, _begin); }
       else
       {
-        return IteratorND_t<NDim - 1>(_begin, _t, _element_shape(),
+        return IteratorND_t<NDim - 1>(_t, _begin, _element_shape(),
                                       _element_size());
       }
     }
 
     auto end() const
     {
-      if constexpr(NDim <= 1) { return Iterator_t(_begin + _flatSize(), _t); }
+      if constexpr(NDim == 1) { return Iterator_t(_t, _begin + _flatSize()); }
       else
       {
-        return IteratorND_t<NDim - 1>(_begin + _flatSize(), _t,
+        return IteratorND_t<NDim - 1>(_t, _begin + _flatSize(),
                                       _element_shape(), _element_size());
       }
     }
@@ -314,7 +349,7 @@ namespace TimeSeries::details::iterators
         return *(_begin + (position * _element_size()));
       else
       {
-        return sub_slice_t(_begin + position * _element_size(), _t,
+        return sub_slice_t(_t, _begin + position * _element_size(),
                            _element_shape());
       }
     }

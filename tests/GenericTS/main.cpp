@@ -76,22 +76,32 @@ namespace
 
   TEST(AGenericTS, CanSetValue)
   {
-    auto s   = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
-    auto it  = s.end();
-    auto it2 = s.begin();
-    it       = it2;
-    auto v   = *it;
-    EXPECT_DOUBLE_EQ(v.v(), 33.);
-    EXPECT_DOUBLE_EQ(v.t(), 0.);
-    *it = 1234.;
-    EXPECT_DOUBLE_EQ(it->v(), 1234.);
-    *it = v;
-    EXPECT_DOUBLE_EQ(it->v(), 33.);
-    *it = *(it + 1);
-    EXPECT_DOUBLE_EQ(it->v(), 22.);
-    v = 5555.;
-    EXPECT_DOUBLE_EQ(it->v(), 22.);
-    EXPECT_DOUBLE_EQ(std::begin(s)->v(), 22.);
+    {
+      auto s   = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
+      auto it  = s.end();
+      auto it2 = s.begin();
+      it       = it2;
+      auto v   = *it;
+      EXPECT_DOUBLE_EQ(v.v(), 33.);
+      EXPECT_DOUBLE_EQ(v.t(), 0.);
+      *it = 1234.;
+      EXPECT_DOUBLE_EQ(it->v(), 1234.);
+      *it = v;
+      EXPECT_DOUBLE_EQ(it->v(), 33.);
+      *it = *(it + 1);
+      EXPECT_DOUBLE_EQ(it->v(), 22.);
+      v = 5555.;
+      EXPECT_DOUBLE_EQ(it->v(), 22.);
+      EXPECT_DOUBLE_EQ(std::begin(s)->v(), 22.);
+    }
+    {
+      auto s           = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
+      auto v           = *s.begin();
+      *s.begin()       = std::move(*(s.begin() + 2));
+      *(s.begin() + 2) = std::move(v);
+      EXPECT_DOUBLE_EQ(s.begin()->v(), 11.);
+      EXPECT_DOUBLE_EQ((s.begin() + 2)->v(), 33.);
+    }
   }
 
   TEST(AGenericTS, CanGetDistanceFromIterators)

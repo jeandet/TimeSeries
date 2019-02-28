@@ -31,11 +31,29 @@ namespace
     }
   }
 
-  TEST(STL_ALG_GenericTS, CanBeSortedByValues)
+  TEST(STL_ALG_GenericTS, CanBeUseMoveBackward)
   {
     auto s = MyTimeSerie{{2., 1, 3., 4., 5., 6.}, {5., 6., 4., 3., 2., 1.}};
     auto sorted =
         MyTimeSerie{{6., 5., 4., 3., 2., 1.}, {1., 2, 3., 4., 5., 6.}};
+    std::move_backward(std::begin(s), std::end(s) - 1, std::end(s));
+    EXPECT_DOUBLE_EQ((std::end(s) - 1)->v(), 2.);
+    EXPECT_DOUBLE_EQ((std::end(s) - 2)->v(), 3.);
+  }
+
+  TEST(STL_ALG_GenericTS, CanBeSortedByValues)
+  {
+    auto s      = MyTimeSerie(100);
+    auto sorted = MyTimeSerie(100);
+
+    std::generate(std::begin(s), std::end(s), [t = 1., v = s.size()]() mutable {
+      return std::pair<double, double>{t++, v--};
+    });
+    std::generate(std::begin(sorted), std::end(sorted),
+                  [t = s.size(), v = 1.]() mutable {
+                    return std::pair<double, double>{t--, v++};
+                  });
+
     std::sort(std::begin(s), std::end(s));
     EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(sorted)));
   }

@@ -2,6 +2,7 @@
 #define TS_ITERATORS_H
 #include <array>
 #include <functional>
+#include <iostream>
 #include <iterator>
 #include <ts_arithmetic.h>
 
@@ -28,47 +29,44 @@ namespace TimeSeries::details::iterators
 
     using time_it_t = decltype(std::declval<container_t<double>>().begin());
 
-    explicit _iterator(const raw_value_it_t& it, const time_it_t& time_it,
+    explicit _iterator(const time_it_t& time_it, const raw_value_it_t& it,
                        const std::array<std::size_t, NDim>& shape,
                        std::size_t increment)
-        : _raw_values_it{it}, _time_it{time_it}, _CurrentValue{it, *time_it,
-                                                               shape},
-          /*_position{pos * increment},*/ _increment{increment}
+        : _raw_values_it{it}, _time_it{time_it},
+          _CurrentValue{*time_it, it, shape}, _increment{increment}
     {}
 
-    explicit _iterator(const raw_value_it_t& it, double& t,
+    explicit _iterator(double& t, const raw_value_it_t& it,
                        const std::array<std::size_t, NDim>& shape,
                        std::size_t increment)
-        : _raw_values_it{it}, _CurrentValue{it, t, shape},
-          /*_position{pos * increment},*/ _increment{increment}
+        : _raw_values_it{it}, _CurrentValue{t, it, shape}, _increment{increment}
     {}
 
-    explicit _iterator(const raw_value_it_t& it, const time_it_t& time_it)
+    explicit _iterator(const time_it_t& time_it, const raw_value_it_t& it)
         : _raw_values_it{it}, _time_it{time_it}, _CurrentValue{*time_it, *it},
-          /*_position{pos},*/ _increment{1}
+          _increment{1}
     {}
 
-    explicit _iterator(const raw_value_it_t& it, double& t)
-        : _raw_values_it{it}, _CurrentValue{t, *it},
-          /*_position{pos},*/ _increment{1}
+    explicit _iterator(double& t, const raw_value_it_t& it)
+        : _raw_values_it{it}, _CurrentValue{t, *it}, _increment{1}
     {}
 
-    template<int N             = NDim,
-             typename MultiDim = typename std::enable_if_t<NDim >= 2>,
-             typename P        = MultiDim>
+    // Should use SINAE
     _iterator(const _iterator& other)
-        : _raw_values_it{other._begin}, _CurrentValue{other, true},
-          _time_it{other._t_begin}, /*_position{other._position},*/
+        : _raw_values_it{other._raw_values_it}, _time_it{other._time_it},
           _increment{other._increment}
-    {}
+    {
+      _CurrentValue = other._CurrentValue;
+      next(0);
+    }
 
-    template<int N           = NDim,
-             typename oneDim = typename std::enable_if_t<NDim == 1>>
-    _iterator(const _iterator& other)
-        : _raw_values_it{other._begin}, _CurrentValue{other, true},
-          _time_it{other._t_begin} /*, _position{other._position}*/,
-          _increment{other._increment}
-    {}
+    _iterator(_iterator&& other)
+        : _raw_values_it{other._raw_values_it}, _time_it{other._time_it},
+          _increment(other._increment)
+    {
+      _CurrentValue = other._CurrentValue;
+      next(0);
+    }
 
     virtual ~_iterator() noexcept = default;
 
@@ -83,7 +81,6 @@ namespace TimeSeries::details::iterators
 
     friend void swap(_iterator& lhs, _iterator& rhs)
     {
-      // std::swap(lhs._CurrentValue, rhs._CurrentValue);
       std::swap(lhs._time_it, rhs._time_it);
       std::swap(lhs._raw_values_it, rhs._raw_values_it);
       std::swap(lhs._increment, rhs._increment);

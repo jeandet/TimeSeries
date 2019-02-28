@@ -78,9 +78,9 @@ namespace TimeSeries
     using container_type = class container_t<val_t, args...>;
 
     using Iterator_t =
-        details::iterators::_iterator<IteratorValue, type, 1, true, false>;
+        details::iterators::_iterator<IteratorValue, type, 0, true, false>;
     using ByIndexIterator_t =
-        details::iterators::_iterator<ByIndexIteratorValue, type, 1, true,
+        details::iterators::_iterator<ByIndexIteratorValue, type, 0, true,
                                       false>;
 
     template<int _NDim>
@@ -144,7 +144,7 @@ namespace TimeSeries
       else
       {
         return details::iterators::TimeSerieSlice<ValueType, type, NDim - 1>(
-            std::begin(_data) + (position * _element_size()), _t[position],
+            _t[position], std::begin(_data) + (position * _element_size()),
             _element_shape());
       }
     }
@@ -169,20 +169,19 @@ namespace TimeSeries
     void resize(std::size_t newSize)
     {
       _t.resize(newSize);
-      _data.resize(newSize);
+      _data.resize(newSize * _element_size());
     }
 
     double t(const std::size_t& position) const { return _t[position]; }
     double& t(const std::size_t& position) { return _t[position]; }
-    ValueType v(const std::size_t& position) const { return _data[position]; }
-    ValueType& v(const std::size_t& position) { return _data[position]; }
+    auto v(const std::size_t& position) { return (begin() + position)->v(); }
 
     auto byIndex()
     {
       if constexpr(NDim == 1)
         return TimeSerieView(
-            ByIndexIterator_t(std::begin(_data), std::begin(_t)),
-            ByIndexIterator_t(std::end(_data), std::end(_t)));
+            ByIndexIterator_t(std::begin(_t), std::begin(_data)),
+            ByIndexIterator_t(std::end(_t), std::end(_data)));
       else
         return TimeSerieView(begin(), end());
     }
@@ -190,17 +189,17 @@ namespace TimeSeries
     auto begin()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(std::begin(_data), std::begin(_t));
+        return Iterator_t(std::begin(_t), std::begin(_data));
       else
-        return IteratorND_t<NDim - 1>(std::begin(_data), std::begin(_t),
+        return IteratorND_t<NDim - 1>(std::begin(_t), std::begin(_data),
                                       _element_shape(), _element_size());
     }
     auto end()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(std::end(_data), std::end(_t));
+        return Iterator_t(std::end(_t), std::end(_data));
       else
-        return IteratorND_t<NDim - 1>(std::end(_data), std::end(_t),
+        return IteratorND_t<NDim - 1>(std::end(_t), std::end(_data),
                                       _element_shape(), _element_size());
     }
 

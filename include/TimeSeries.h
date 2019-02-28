@@ -13,10 +13,12 @@ namespace TimeSeries
   class ITimeSerie
   {
   public:
-    virtual ~ITimeSerie()                          = default;
-    virtual std::size_t size() const               = 0;
-    virtual std::size_t size(int index) const      = 0;
-    virtual std::vector<std::size_t> shape() const = 0;
+    virtual ~ITimeSerie()                               = default;
+    virtual std::size_t size() const                    = 0;
+    virtual std::size_t size(int index) const           = 0;
+    virtual std::vector<std::size_t> shape() const      = 0;
+    virtual double t(const std::size_t& position) const = 0;
+    virtual double& t(const std::size_t& position)      = 0;
   };
 
   template<typename T> struct TimeSerieView
@@ -25,7 +27,7 @@ namespace TimeSeries
     T _end;
     T begin() { return _begin; }
     T end() { return _end; }
-    TimeSerieView(T begin, T end) : _begin(begin), _end(end) {}
+    TimeSerieView(const T& begin, const T& end) : _begin(begin), _end(end) {}
     TimeSerieView(TimeSerieView&&) = default;
   };
 
@@ -50,6 +52,8 @@ namespace TimeSeries
     container_t<RawValueType> _data;
     container_t<double> _t;
     std::vector<std::size_t> _shape;
+    //TODO implement axis system
+    std::array<std::vector<double>,NDim> _axis;
 
     std::size_t _element_size() const
     {
@@ -178,8 +182,11 @@ namespace TimeSeries
       _data.resize(newSize * _element_size());
     }
 
-    double t(const std::size_t& position) const { return _t[position]; }
-    double& t(const std::size_t& position) { return _t[position]; }
+    double t(const std::size_t& position) const override
+    {
+      return _t[position];
+    }
+    double& t(const std::size_t& position) override { return _t[position]; }
     auto v(const std::size_t& position) { return (begin() + position)->v(); }
 
     auto byIndex()
@@ -225,7 +232,6 @@ namespace TimeSeries
       _data.push_back(value.second);
       _t.push_back(value.first);
     }
-    // template<class T> void push_back(T&& value) { push_back(value); }
 
     template<class T>
     auto push_back(const T& value) -> decltype(value.flat_begin(), void())

@@ -119,6 +119,10 @@ namespace
     EXPECT_EQ(2, s.size());
     EXPECT_DOUBLE_EQ(15.2, s.begin()->v());
     EXPECT_DOUBLE_EQ(1., s.begin()->t());
+    s << std::pair{99., 10.};
+    EXPECT_DOUBLE_EQ(99., s.back().t());
+    EXPECT_DOUBLE_EQ(10., s.back().v());
+    EXPECT_EQ(3, s.size());
   }
 
   TEST(AGenericTS, CanRangeBasedLoopIterators)

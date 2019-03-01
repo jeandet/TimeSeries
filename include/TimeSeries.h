@@ -230,6 +230,13 @@ namespace TimeSeries
     auto back() { return *(end() - 1); }
 
     template<class T>
+    TimeSerie& operator<<(const T& obj)
+    {
+      this->push_back(obj);
+      return *this;
+    }
+
+    template<class T>
     auto push_back(const T& value) -> decltype(T(1., 2.), value.v(), void())
     {
       _data.push_back(value.v());

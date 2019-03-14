@@ -13,12 +13,16 @@ namespace TimeSeries
   class ITimeSerie
   {
   public:
-    virtual ~ITimeSerie()                               = default;
-    virtual std::size_t size() const                    = 0;
-    virtual std::size_t size(int index) const           = 0;
-    virtual std::vector<std::size_t> shape() const      = 0;
-    virtual double t(const std::size_t& position) const = 0;
-    virtual double& t(const std::size_t& position)      = 0;
+    virtual ~ITimeSerie()                                          = default;
+    virtual std::size_t size() const                               = 0;
+    virtual std::size_t size(int index) const                      = 0;
+    virtual std::vector<std::size_t> shape() const                 = 0;
+    virtual double t(const std::size_t& position) const            = 0;
+    virtual double& t(const std::size_t& position)                 = 0;
+    virtual const std::string& unit(unsigned int axis_index) const = 0;
+    virtual std::string& unit(unsigned int axis_index)             = 0;
+    virtual std::vector<double>& axis(unsigned int axis_index)     = 0;
+    virtual const std::vector<double>& axis(unsigned int axis_index) const = 0;
   };
 
   template<typename T> struct TimeSerieView
@@ -51,8 +55,8 @@ namespace TimeSeries
   protected:
     container_t<RawValueType> _data;
     std::vector<std::size_t> _shape;
-    //TODO implement axis system
-    std::array<container_t<double>,NDim> _axes;
+    std::array<std::vector<double>, NDim> _axes;
+    std::array<std::string, NDim + 1> _units;
 
     std::size_t _element_size() const
     {
@@ -157,15 +161,18 @@ namespace TimeSeries
       std::copy(begin, end, this->begin());
     }
 
-    auto operator[](const std::size_t& position)
+    typename std::conditional_t<
+        NDim == 1, raw_value_type&,
+        details::iterators::TimeSerieSlice<RawValueType, type, NDim - 1>>
+    operator[](std::size_t position)
     {
       if constexpr(NDim == 1)
         return _data[position];
       else
       {
         return details::iterators::TimeSerieSlice<RawValueType, type, NDim - 1>(
-            _axes[0][position], std::begin(_data) + (position * _element_size()),
-            _element_shape());
+            _axes[0][position],
+            std::begin(_data) + (position * _element_size()), _element_shape());
       }
     }
 
@@ -196,7 +203,10 @@ namespace TimeSeries
     {
       return _axes[0][position];
     }
-    double& t(const std::size_t& position) override { return _axes[0][position]; }
+    double& t(const std::size_t& position) override
+    {
+      return _axes[0][position];
+    }
     auto v(const std::size_t& position) { return (begin() + position)->v(); }
 
     auto byIndex()
@@ -226,32 +236,55 @@ namespace TimeSeries
                                       _element_shape(), _element_size());
     }
 
+    std::string& unit(unsigned int axis_index)
+    {
+      assert(axis_index < NDim);
+      return _units[axis_index];
+    }
+
+    const std::string& unit(unsigned int axis_index) const
+    {
+      assert(axis_index < NDim);
+      return _units[axis_index];
+    }
+
+    std::vector<double>& axis(unsigned int axis_index) override
+    {
+      assert(axis_index < NDim);
+      return _axes[axis_index];
+    }
+
+    const std::vector<double>& axis(unsigned int axis_index) const override
+    {
+      assert(axis_index < NDim);
+      return _axes[axis_index];
+    }
+
     auto front() { return *begin(); }
     auto back() { return *(end() - 1); }
 
-    template<class T>
-    TimeSerie& operator<<(const T& obj)
+    template<class T> TimeSerie& operator<<(T&& obj)
     {
-      this->push_back(obj);
+      this->push_back(std::forward<T>(obj));
       return *this;
     }
 
     template<class T>
-    auto push_back(const T& value) -> decltype(T(1., 2.), value.v(), void())
+    auto push_back(T&& value) -> decltype(T(1., 2.), value.v(), void())
     {
       _data.push_back(value.v());
       _axes[0].push_back(value.t());
     }
 
     template<class T>
-    auto push_back(const T& value) -> decltype(T(1., 2.), value.first, void())
+    auto push_back(T&& value) -> decltype(T(1., 2.), value.first, void())
     {
       _data.push_back(value.second);
       _axes[0].push_back(value.first);
     }
 
     template<class T>
-    auto push_back(const T& value) -> decltype(value.flat_begin(), void())
+    auto push_back(T&& value) -> decltype(value.flat_begin(), void())
     {
       std::copy(value.flat_begin(), value.flat_end(),
                 std::back_inserter(_data));
@@ -259,8 +292,7 @@ namespace TimeSeries
     }
 
     template<class T>
-    auto push_back(const T& iterator)
-        -> decltype(iterator._raw_values_it, void())
+    auto push_back(T&& iterator) -> decltype(iterator._raw_values_it, void())
     {
       std::copy(iterator._raw_values_it,
                 iterator._raw_values_it + iterator._increment,

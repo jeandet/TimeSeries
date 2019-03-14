@@ -300,7 +300,10 @@ namespace TimeSeries::details::iterators
 
     void _update(const container_it_t& begin)
     {
-      [[unlikely]] if(_v)
+#if __cplusplus > 201703L
+      [[unlikely]]
+#endif
+      if(_v)
       {
         delete _v;
         _v = nullptr;

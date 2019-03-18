@@ -41,8 +41,8 @@ namespace TimeSeries
 
   class TimeSerie : public ITimeSerie
   {
-    static std::size_t
-    _flattenSize(const std::initializer_list<std::size_t>& sizes) noexcept
+    template<template<typename val_t, typename...> class T>
+    static std::size_t _flattenSize(const T<std::size_t>& sizes) noexcept
     {
       std::size_t size = 1.;
       for(auto s : sizes)
@@ -99,6 +99,8 @@ namespace TimeSeries
         details::iterators::TimeSerieSlice<RawValueType, type, _NDim, false>,
         type, _NDim>;
 
+    using axis_t = std::vector<double>;
+
     template<typename _ValueType, typename _ts_type, int _NDim,
              bool compareValue>
     friend struct details::iterators::TimeSerieSlice;
@@ -107,12 +109,19 @@ namespace TimeSeries
 
     template<typename Dummy = void,
              typename       = std::enable_if_t<NDim == 1, Dummy>>
-    TimeSerie(std::size_t size) : _data(size)
+    TimeSerie(std::size_t size) : _data(size), _shape(NDim, size)
     {
       _axes[0].resize(size);
     }
 
     TimeSerie(const std::initializer_list<std::size_t>& sizes)
+        : _data(_flattenSize(sizes)), _shape(sizes)
+    {
+      _axes[0].resize(*sizes.begin());
+      assert(sizes.size() == NDim);
+    }
+
+    TimeSerie(const std::vector<std::size_t>& sizes)
         : _data(_flattenSize(sizes)), _shape(sizes)
     {
       _axes[0].resize(*sizes.begin());
@@ -155,6 +164,7 @@ namespace TimeSeries
       _axes[0] = t;
     }
 
+    // TODO check shape here
     TimeSerie(const Iterator_t& begin, const Iterator_t& end)
     {
       this->resize(std::distance(begin, end));
@@ -270,14 +280,16 @@ namespace TimeSeries
     }
 
     template<class T>
-    auto push_back(T&& value) -> decltype(T(1., 2.), value.v(), void())
+    auto push_back(T&& value)
+        -> decltype(T{std::pair{1., RawValueType{}}}, value.v(), void())
     {
       _data.push_back(value.v());
       _axes[0].push_back(value.t());
     }
 
     template<class T>
-    auto push_back(T&& value) -> decltype(T(1., 2.), value.first, void())
+    auto push_back(T&& value)
+        -> decltype(T{1., RawValueType{}}, value.first, void())
     {
       _data.push_back(value.second);
       _axes[0].push_back(value.first);

@@ -78,6 +78,14 @@ namespace
     EXPECT_EQ((b + 99)->t(), 99.);
   }
 
+  TEST(STL_ALG_GenericTS, CanBackInsertCopy)
+  {
+    auto exp = MyTimeSerie{{6., 5., 4., 3., 2., 1.}, {1., 2, 3., 4., 5., 6.}};
+    auto s   = MyTimeSerie{};
+    std::copy(std::begin(exp), std::end(exp), std::back_inserter(s));
+    EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(exp)));
+  }
+
   TEST(STL_ALG_GenericTS, CanSwapTwoValues)
   {
     auto s   = MyTimeSerie{{1., 2}, {4., 3}};

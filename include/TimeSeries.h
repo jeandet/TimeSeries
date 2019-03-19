@@ -164,6 +164,16 @@ namespace TimeSeries
       _axes[0] = t;
     }
 
+    template<typename Dummy = void,
+             typename       = std::enable_if_t<(NDim > 1), Dummy>>
+    TimeSerie(const container_t<double>& t,
+              const container_t<RawValueType>& data,
+              const std::vector<std::size_t>& sizes)
+        : _data{data}, _shape(sizes)
+    {
+      _axes[0] = t;
+    }
+
     // TODO check shape here
     TimeSerie(const Iterator_t& begin, const Iterator_t& end)
     {

@@ -357,7 +357,8 @@ namespace TimeSeries::details::iterators
     auto flat_end() { return _begin + _flatSize(); }
     auto flat_end() const { return _begin + _flatSize(); }
 
-    auto operator[](const std::size_t& position)
+    typename std::conditional_t<NDim == 1, ValueType&, sub_slice_t>
+    operator[](const std::size_t& position)
     {
       if constexpr(NDim == 1)
         return *(_begin + (position * _element_size()));

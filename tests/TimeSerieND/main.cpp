@@ -48,6 +48,13 @@ namespace
     }
   }
 
+  TEST(ATimeSerieND, CanSetRawElement)
+  {
+    auto s     = MyTimeSerie3d({100, 10, 5});
+    s[0][0][0] = 123.321;
+    EXPECT_DOUBLE_EQ(s[0][0][0], 123.321);
+  }
+
   TEST(ATimeSerieND, HasConsistentSliceShape)
   {
     auto s = MyTimeSerie3d({100, 10, 5});

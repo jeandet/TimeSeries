@@ -258,13 +258,13 @@ namespace TimeSeries
 
     std::string& unit(unsigned int axis_index)
     {
-      assert(axis_index < NDim);
+      assert(axis_index <= NDim);
       return _units[axis_index];
     }
 
     const std::string& unit(unsigned int axis_index) const
     {
-      assert(axis_index < NDim);
+      assert(axis_index <= NDim);
       return _units[axis_index];
     }
 

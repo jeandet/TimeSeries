@@ -1,0 +1,8 @@
+path_classifiers:
+  docs:
+    - README.md
+    - LICENSE.txt
+  test:
+    - "tests/**/*.cpp"
+queries:
+- exclude: googletest # This query is only valuable until c++14

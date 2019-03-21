@@ -23,6 +23,8 @@ namespace TimeSeries
     virtual std::string& unit(unsigned int axis_index)             = 0;
     virtual std::vector<double>& axis(unsigned int axis_index)     = 0;
     virtual const std::vector<double>& axis(unsigned int axis_index) const = 0;
+    virtual std::pair<double, double>
+    axis_range(unsigned int axis_index) const = 0;
   };
 
   template<typename T> struct TimeSerieView
@@ -272,6 +274,14 @@ namespace TimeSeries
     {
       assert(axis_index < NDim);
       return _axes[axis_index];
+    }
+
+    std::pair<double, double> axis_range(unsigned int axis_index) const override
+    {
+      auto& ax = axis(axis_index);
+      if(ax.size()) return {ax.front(), ax.back()};
+      return {std::numeric_limits<double>::quiet_NaN(),
+              std::numeric_limits<double>::quiet_NaN()};
     }
 
     const std::vector<double>& axis(unsigned int axis_index) const override

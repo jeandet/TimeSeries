@@ -6,3 +6,18 @@ path_classifiers:
     - "tests/**/*.cpp"
 queries:
 - exclude: googletest # This query is only valuable until c++14
+extraction:
+    cpp:
+        prepare:
+            packages:
+                - build-essential
+                - cmake
+        configure:
+            command:
+                - mkdir build
+                - cd build
+                - cmake ..
+        index:
+            build_command:
+                - cd build
+                - make

@@ -313,6 +313,7 @@ namespace TimeSeries
     {
       _data.push_back(value.second);
       _axes[0].push_back(value.first);
+      _shape[0] = _axes[0].size();
     }
 
     template<class T>
@@ -321,6 +322,15 @@ namespace TimeSeries
       std::copy(value.flat_begin(), value.flat_end(),
                 std::back_inserter(_data));
       _axes[0].push_back(value.t());
+      _shape[0] = _axes[0].size();
+#if __cplusplus > 201703L
+      [[unlikely]]
+#endif
+      if(_axes[0].size() == 1)
+      {
+        const auto sh = value.shape();
+        std::copy(std::cbegin(sh), std::cend(sh), std::begin(_shape) + 1);
+      }
     }
 
     template<class T>
@@ -330,6 +340,7 @@ namespace TimeSeries
                 iterator._raw_values_it + iterator._increment,
                 std::back_inserter(_data));
       _axes[0].push_back(*(iterator._time_it));
+      _shape[0] = _axes[0].size();
     }
 
     std::size_t size() const override { return _axes[0].size(); }

@@ -369,7 +369,19 @@ namespace TimeSeries::details::iterators
       }
     }
 
-    auto shape() { return _shape; }
+    typename std::conditional_t<NDim == 1, const ValueType&, const sub_slice_t>
+    operator[](const std::size_t& position) const
+    {
+      if constexpr(NDim == 1)
+        return *(_begin + (position * _element_size()));
+      else
+      {
+        return sub_slice_t(_t, _begin + position * _element_size(),
+                           _element_shape());
+      }
+    }
+
+    const auto shape() const { return _shape; }
   };
 } // namespace TimeSeries::details::iterators
 

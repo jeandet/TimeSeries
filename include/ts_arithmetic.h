@@ -25,7 +25,7 @@ namespace TimeSeries::details::arithmetic
       return *static_cast<Object*>(this);
     }
 
-    Object operator++(int) const
+    Object operator++(int) // const
     {
       Object result(*static_cast<const Object*>(this));
       this->operator++();
@@ -38,7 +38,7 @@ namespace TimeSeries::details::arithmetic
       return *static_cast<Object*>(this);
     }
 
-    Object operator--(int) const
+    Object operator--(int) // const
     {
       Object result(*static_cast<const Object*>(this));
       this->operator--();

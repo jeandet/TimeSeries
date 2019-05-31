@@ -52,7 +52,7 @@ namespace TimeSeries::details::iterators
         : _raw_values_it{it}, _CurrentValue{t, *it}, _increment{1}
     {}
 
-    // Should use SINAE
+    // Should use SFINAE
     _iterator(const _iterator& other)
         : _raw_values_it{other._raw_values_it}, _time_it{other._time_it},
           _increment{other._increment}

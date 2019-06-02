@@ -219,15 +219,17 @@ namespace TimeSeries::details::iterators
   public:
     TimeSerieSlice()
         : _t_{0.}, _v{new container_t<ValueType>}, _t{std::ref(_t_)}
-    {}
+    {
+      _begin = std::begin(*_v);
+    }
     TimeSerieSlice(double& t, const container_it_t& begin,
                    const std::array<std::size_t, NDim>& shape)
-        : _begin{begin}, _t{std::ref(t)}, _shape{shape}
+        : _begin{begin}, _v{nullptr}, _t{std::ref(t)}, _shape{shape}
     {}
 
     TimeSerieSlice(const TimeSerieSlice& other, bool do_not_detach)
-        : _begin{other._begin}, _t_{other._t_}, _t{other._t}, _shape{
-                                                                  other._shape}
+        : _begin{other._begin}, _v{nullptr}, _t_{other._t_}, _t{other._t},
+          _shape{other._shape}
     {
       assert(do_not_detach == true);
     }

@@ -23,7 +23,7 @@ namespace
 
   TEST(ATimeSerieND, CanCompareIterators)
   {
-    auto s   = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {1, 1});
+    auto s   = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {3, 1});
     auto it1 = s.begin();
     EXPECT_EQ(it1, s.begin());
     EXPECT_NE(it1, s.begin() + 1);
@@ -67,11 +67,16 @@ namespace
   {
     {
       std::vector<double> data(100 * 10);
+      std::vector<double> x(100);
       std::generate(std::begin(data), std::end(data), []() {
         static double i = 0;
         return i++;
       });
-      auto s       = MyTimeSerie2d(data, data, {100, 10});
+      std::generate(std::begin(x), std::end(x), []() {
+        static double i = 0;
+        return i++;
+      });
+      auto s       = MyTimeSerie2d(x, data, {100, 10});
       double value = 0.;
       for(std::size_t i = 0; i < s.shape()[0]; i++)
       {
@@ -83,11 +88,16 @@ namespace
     }
     {
       std::vector<double> data(100 * 10 * 5);
+      std::vector<double> x(100);
       std::generate(std::begin(data), std::end(data), []() {
         static double i = 0;
         return i++;
       });
-      auto s       = MyTimeSerie3d(data, data, {100, 10, 5});
+      std::generate(std::begin(x), std::end(x), []() {
+        static double i = 0;
+        return i++;
+      });
+      auto s       = MyTimeSerie3d(x, data, {100, 10, 5});
       double value = 0.;
       for(std::size_t i = 0; i < s.shape()[0]; i++)
       {
@@ -108,15 +118,26 @@ namespace
 
   TEST(ATimeSerieND, CanBackInsertValues)
   {
-    auto s    = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {1, 1});
+    auto s    = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {3, 1});
     auto dest = MyTimeSerie2d({0, 1}); // TODO not sure about this...
     std::copy(std::begin(s), std::end(s), std::back_inserter(dest));
     EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(dest)));
   }
 
+  TEST(ATimeSerieND, CanPushBackValues)
+  {
+    auto s    = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {3, 1});
+    auto dest = MyTimeSerie2d({0, 1}); // TODO not sure about this...
+    for(auto& v : s)
+    {
+      dest.push_back(v);
+    }
+    EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(dest)));
+  }
+
   TEST(ATimeSerieND, CanCompyIteratorsValues)
   {
-    auto s  = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {1, 1});
+    auto s  = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {3, 1});
     auto it = s.begin();
     auto v  = *it;
     auto v2 = v;
@@ -135,8 +156,8 @@ namespace
 
   TEST(ATimeSerieND, CanSwapTwoValuesStepByStep)
   {
-    auto s   = MyTimeSerie2d({0., 1.}, {33., 22.}, {1, 1});
-    auto exp = MyTimeSerie2d({1., 0.}, {22., 33.}, {1, 1});
+    auto s   = MyTimeSerie2d({0., 1.}, {33., 22.}, {2, 1});
+    auto exp = MyTimeSerie2d({1., 0.}, {22., 33.}, {2, 1});
     auto b   = s.begin();
     m_swap(*b, *(b + 1));
     EXPECT_EQ(*exp.begin(), *b);
@@ -145,8 +166,8 @@ namespace
 
   TEST(ATimeSerieND, CanSwapTwoValues)
   {
-    auto s   = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {1, 1});
-    auto exp = MyTimeSerie2d({1., 0., 2.}, {22., 33., 11.}, {1, 1});
+    auto s   = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {3, 1});
+    auto exp = MyTimeSerie2d({1., 0., 2.}, {22., 33., 11.}, {3, 1});
     auto b   = s.begin();
     std::swap(*b, *(b + 1));
     EXPECT_EQ(*exp.begin(), *b);
@@ -156,9 +177,9 @@ namespace
   TEST(ATimeSerieND, CanBeSortedByIndex)
   {
     auto s = MyTimeSerie2d{
-        {6., 5., 4., 3., 2., 1.}, {1., 2, 3., 4., 5., 6.}, {1, 1}};
+        {6., 5., 4., 3., 2., 1.}, {1., 2, 3., 4., 5., 6.}, {6, 1}};
     auto sorted = MyTimeSerie2d{
-        {1., 2, 3., 4., 5., 6.}, {6., 5., 4., 3., 2., 1.}, {1, 1}};
+        {1., 2, 3., 4., 5., 6.}, {6., 5., 4., 3., 2., 1.}, {6, 1}};
     std::sort(std::begin(s.byIndex()), std::end(s.byIndex()));
     EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(sorted)));
   }

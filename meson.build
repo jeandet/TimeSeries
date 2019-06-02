@@ -7,7 +7,7 @@ time_series_dep = declare_dependency(include_directories:include_directories('in
 gtest_dep = dependency('gtest', main : true, fallback : ['gtest', 'gtest_dep'])
 benchmark_dep = dependency('benchmark', fallback : ['google-benchmark', 'google_benchmark_dep'])
 
-foreach test:['SimpleScalar','STL_ALGS','GenericTS']
+foreach test:['SimpleScalar','STL_ALGS','GenericTS', 'TimeSerieND']
     exe = executable(test,'tests/'+test+'/main.cpp',
                     dependencies:[gtest_dep, time_series_dep],
                     install: true

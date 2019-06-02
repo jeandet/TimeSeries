@@ -54,6 +54,16 @@ namespace TimeSeries
       return size;
     }
 
+    void _sanity_check()
+    {
+      assert(NDim == _shape.size());
+      assert(NDim == _axes.size());
+      for(int i = 0; i < NDim; i++)
+      {
+        assert(_axes[i].size() == _shape[i]);
+      }
+    }
+
   protected:
     container_t<RawValueType> _data;
     std::vector<std::size_t> _shape;
@@ -114,6 +124,7 @@ namespace TimeSeries
     TimeSerie(std::size_t size) : _data(size), _shape(NDim, size)
     {
       _axes[0].resize(size);
+      _sanity_check();
     }
 
     TimeSerie(const std::initializer_list<std::size_t>& sizes)
@@ -124,13 +135,14 @@ namespace TimeSeries
       {
         _axes[i].resize(*(sizes.begin() + i));
       }
+      _sanity_check();
     }
 
     TimeSerie(const std::vector<std::size_t>& sizes)
         : _data(_flattenSize(sizes)), _shape(sizes)
     {
       _axes[0].resize(*sizes.begin());
-      assert(sizes.size() == NDim);
+      _sanity_check();
     }
 
     template<typename Dummy = void,
@@ -139,6 +151,7 @@ namespace TimeSeries
         : _data{data}, _shape{{t.size()}}
     {
       _axes[0] = std::move(t);
+      _sanity_check();
     }
 
     template<typename Dummy = void,
@@ -157,6 +170,11 @@ namespace TimeSeries
         : _data{data}, _shape(sizes)
     {
       _axes[0] = t;
+      for(int i = 1; i < NDim; i++)
+      {
+        _axes[i].resize(_shape[i]);
+      }
+      _sanity_check();
     }
 
     template<typename Dummy = void,
@@ -167,6 +185,11 @@ namespace TimeSeries
         : _data{data}, _shape(sizes)
     {
       _axes[0] = t;
+      for(int i = 1; i < NDim; i++)
+      {
+        _axes[i].resize(_shape[i]);
+      }
+      _sanity_check();
     }
 
     template<typename Dummy = void,
@@ -177,6 +200,11 @@ namespace TimeSeries
         : _data{data}, _shape(sizes)
     {
       _axes[0] = t;
+      for(int i = 1; i < NDim; i++)
+      {
+        _axes[i].resize(_shape[i]);
+      }
+      _sanity_check();
     }
 
     // TODO check shape here

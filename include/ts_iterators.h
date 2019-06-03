@@ -127,7 +127,8 @@ namespace TimeSeries::details::iterators
     itValue_t& operator*() { return _CurrentValue; }
     itValue_t& operator[](int offset) const
     {
-      return _CurrentValue.advance(offset);
+      auto copy = *this;
+      return *(copy + offset);
     }
 
   protected:

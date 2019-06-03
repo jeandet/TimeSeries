@@ -20,7 +20,9 @@ namespace
   {
     auto s  = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
     auto it = std::begin(s);
+    TimeSeries::ScalarTs::Iterator_t it2{it};
     EXPECT_EQ(std::begin(s), it);
+    EXPECT_EQ(it, it2);
   }
 
   TEST(ATSIterator, CanBeCopyConstructed)
@@ -73,6 +75,16 @@ namespace
     EXPECT_LT(it1, it2);
     EXPECT_GT(it2, it1);
     EXPECT_EQ(it1, s.begin());
+    EXPECT_NE(it1, it2);
+  }
+
+  TEST(ATSIterator, CanOffsetDereference)
+  {
+    auto s   = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
+    auto it1 = s.begin();
+    EXPECT_EQ(it1[0], 33.);
+    EXPECT_EQ(it1[1], 22.);
+    EXPECT_EQ(it1[2], 11.);
   }
 
 } // namespace

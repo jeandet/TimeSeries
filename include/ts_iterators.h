@@ -51,7 +51,7 @@ namespace TimeSeries::details::iterators
     explicit _iterator(double& t, const raw_value_it_t& it)
         : _raw_values_it{it}, _CurrentValue{t, *it}, _increment{1}
     {}
-
+    _iterator() = delete;
     // Should use SFINAE
     _iterator(const _iterator& other)
         : _raw_values_it{other._raw_values_it}, _time_it{other._time_it},

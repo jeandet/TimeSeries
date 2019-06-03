@@ -99,6 +99,7 @@ declare_test(SimpleScalar SimpleScalar tests/SimpleScalar/main.cpp)
 declare_test(STL_ALGS STL_ALGS tests/STL_ALGS/main.cpp)
 declare_test(GenericTS GenericTS tests/GenericTS/main.cpp)
 declare_test(TimeSerieND TimeSerieND tests/TimeSerieND/main.cpp)
+declare_test(TSIterators TSIterators tests/TSIterators/main.cpp)
 
 install(TARGETS TimeSeries EXPORT TimeSeriesConfig
     ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}

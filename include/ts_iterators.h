@@ -15,13 +15,14 @@ namespace TimeSeries::details::iterators
                      public details::arithmetic::_comparable_object<
                          _iterator<itValue_t, ts_t, NDim, iterTime, isConst>>
   {
-    friend ts_t;
     using iterator_category = std::random_access_iterator_tag;
     using value_type =
         typename std::conditional<isConst, const itValue_t, itValue_t>::type;
     using difference_type = std::ptrdiff_t;
-    using pointer         = value_type*;
+    using pointer         = void;
     using reference       = value_type&;
+
+    friend ts_t;
     template<typename T, typename... args>
     using container_t = typename ts_t::template container_type<T, args...>;
 

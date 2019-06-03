@@ -79,6 +79,11 @@ namespace TimeSeries::details::iterators
      */
     void _update(const container_it_t& begin) { _v = std::ref(*begin); }
 
+    friend bool operator==(const IteratorValue& itVal, const ValueType& value)
+    {
+      return itVal.v() == value;
+    }
+
     IteratorValue& operator=(const IteratorValue& other)
     {
       _v.get() = other.v();

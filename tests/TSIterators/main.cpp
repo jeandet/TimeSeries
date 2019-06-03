@@ -82,6 +82,7 @@ namespace
   {
     auto s   = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
     auto it1 = s.begin();
+    // TODO .v() is broken
     EXPECT_EQ(it1[0], 33.);
     EXPECT_EQ(it1[1], 22.);
     EXPECT_EQ(it1[2], 11.);

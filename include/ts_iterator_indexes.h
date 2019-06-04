@@ -11,57 +11,55 @@ namespace TimeSeries::details::iterators
                              public details::arithmetic::_comparable_object<
                                  _iterator_indexes<ts_t, iterTime>>
   {
-    ts_t* ts;
-    std::size_t position;
-    std::size_t time_position;
+    using ValueType = typename ts_t::raw_value_type;
+
+    ValueType* data;
+    double* time;
+    //    std::size_t position;
+    //    std::size_t time_position;
     std::size_t increment = 1;
 
-    _iterator_indexes(ts_t* ts, std::size_t position, std::size_t time_position,
-                      std::size_t increment = 1)
-        : ts{ts}, position{position},
-          time_position{time_position}, increment{increment}
+    _iterator_indexes(double* time, ValueType* data, std::size_t increment = 1)
+        : data{data}, time{time}, increment{increment}
     {}
 
     friend void swap(_iterator_indexes& lhs, _iterator_indexes& rhs)
     {
       std::swap(lhs.ts, rhs.ts);
-      std::swap(lhs.position, rhs.position);
-      std::swap(lhs.position, rhs.time_position);
+      std::swap(lhs.data, rhs.data);
+      std::swap(lhs.time, rhs.time);
       std::swap(lhs.increment, rhs.increment);
     }
 
     void next(int offset)
     {
-      this->position += offset;
-      if constexpr(iterTime) { this->time_position += offset; }
+      this->data += offset * increment;
+      if constexpr(iterTime) { this->time += offset * increment; }
     }
 
     void prev(int offset) { next(-offset); }
 
     bool equals(const _iterator_indexes& other) const
     {
-      return ts == other.ts and position == other.position and
-             time_position == other.time_position and
+      return data == other.data and time == other.time and
              increment == other.increment;
     }
 
-    bool gt(const _iterator_indexes& other) const
-    {
-      return position > other.position;
-    }
+    bool gt(const _iterator_indexes& other) const { return data > other.data; }
 
     std::size_t distance(const _iterator_indexes& other) const
     {
-      return position- other.position ;
+      if constexpr(iterTime) { return time - other.time; }
+      return data - other.data;
     }
 
-    inline auto v() const { return ts->_data[position]; }
-    inline auto t() const { return ts->_axes[0][time_position]; }
-    inline auto& v() { return ts->_data[position]; }
-    inline auto& t() { return ts->_axes[0][time_position]; }
+    inline auto v() const { return *data; }
+    inline auto t() const { return *time; }
+    inline auto& v() { return *data; }
+    inline auto& t() { return *time; }
 
-    inline auto v_ptr() const { return ts->_data.data()+position; }
-    inline auto t_ptr() const { return ts->_axes[0].data()+time_position; }
+    inline auto v_ptr() const { return data ; }
+    inline auto t_ptr() const { return time ; }
   };
 } // namespace TimeSeries::details::iterators
 #endif

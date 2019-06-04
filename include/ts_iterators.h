@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <numeric>
 
 namespace TimeSeries::details::iterators
 {
@@ -25,12 +26,23 @@ namespace TimeSeries::details::iterators
     using pointer         = void;
     using reference       = value_type&;
 
+    using raw_value_type = typename ts_t::raw_value_type;
+
     friend ts_t;
     using indexes_t = _iterator_indexes<ts_t, iterTime>;
 
-    explicit _iterator(ts_t* ts, std::size_t position,
-                       std::size_t time_position, std::size_t increment)
-        : _indexes{ts, position, time_position, increment}
+    std::size_t _element_size(const std::vector<std::size_t>& shape) const
+    {
+      if constexpr(NDim > 1)
+        return std::accumulate(std::cbegin(shape) + 1, std::cend(shape), 1ul,
+                               std::multiplies<std::size_t>());
+      else
+        return 1;
+    }
+
+    explicit _iterator(double* time, raw_value_type* data,
+                       const std::vector<std::size_t>& shape)
+        : _indexes{time, data, _element_size(shape)}
     {
       _updateValue();
     }

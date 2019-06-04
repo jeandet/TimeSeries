@@ -91,16 +91,14 @@ namespace TimeSeries
   public:
     using type = TimeSerie<RawValueType, TimeSerieType, NDim, container_t>;
 
-    using IteratorValue = details::iterators::IteratorValue<
-        RawValueType, details::iterators::_iterator_indexes<type>>;
+    using IteratorValue  = details::iterators::IteratorValue<RawValueType>;
     using raw_value_type = RawValueType;
     using value_type     = typename std::conditional<
-        NDim == 1, details::iterators::IteratorValue<RawValueType, type>,
+        NDim == 1, details::iterators::IteratorValue<RawValueType>,
         details::iterators::TimeSerieSlice<RawValueType, type, NDim - 1,
                                            false>>::type;
-    using ByIndexIteratorValue = details::iterators::IteratorValue<
-        RawValueType, details::iterators::_iterator_indexes<type, false>,
-        false>;
+    using ByIndexIteratorValue =
+        details::iterators::IteratorValue<RawValueType, false>;
 
     template<typename val_t, typename... args>
     using container_type = class container_t<val_t, args...>;
@@ -282,27 +280,28 @@ namespace TimeSeries
     auto begin()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(this, 0, 0, 1);
+        return Iterator_t(_axes[0].data(), _data.data(), _shape);
       else
-        return IteratorND_t<NDim - 1>(std::begin(_axes[0]), std::begin(_data),
-                                      _element_shape(), _element_size());
+        return IteratorND_t<NDim - 1>(_axes[0].data(), _data.data(), _shape);
     }
     auto end()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(this, size(), size(), 1);
+        return Iterator_t(_axes[0].data() + size(), _data.data() + size(),
+                          _shape);
       else
-        return IteratorND_t<NDim - 1>(std::end(_axes[0]), std::end(_data),
-                                      _element_shape(), _element_size());
+        return IteratorND_t<NDim - 1>(_axes[0].data() + _axes[0].size(),
+                                      _data.data() + _data.data().size(),
+                                      _shape);
     }
 
-    std::string& unit(unsigned int axis_index)
+    std::string& unit(unsigned int axis_index) override
     {
       assert(axis_index <= NDim);
       return _units[axis_index];
     }
 
-    const std::string& unit(unsigned int axis_index) const
+    const std::string& unit(unsigned int axis_index) const override
     {
       assert(axis_index <= NDim);
       return _units[axis_index];

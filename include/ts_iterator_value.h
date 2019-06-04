@@ -372,15 +372,15 @@ namespace TimeSeries::details::iterators
       }
     }
 
-    auto end() const
+    auto end()
     {
       if constexpr(NDim == 1)
       {
         if(_v)
-          return Iterator_t(&_t, _begin, _shape);
+          return Iterator_t(&_t, _begin + _flatSize());
         else
         {
-          return Iterator_t(_t_ptr, _begin, _shape);
+          return Iterator_t(_t_ptr, _begin + _flatSize());
         }
       }
       else

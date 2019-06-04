@@ -229,8 +229,8 @@ namespace TimeSeries
       else
       {
         return details::iterators::TimeSerieSlice<RawValueType, type, NDim - 1>(
-            _axes[0][position],
-            std::begin(_data) + (position * _element_size()), _element_shape());
+            _axes[0].data() + position,
+            _data.data() + (position * _element_size()), _element_shape());
       }
     }
 
@@ -271,8 +271,9 @@ namespace TimeSeries
     {
       if constexpr(NDim == 1)
         return TimeSerieView(
-            ByIndexIterator_t(std::begin(_axes[0]), std::begin(_data)),
-            ByIndexIterator_t(std::end(_axes[0]), std::end(_data)));
+            ByIndexIterator_t(_axes[0].data(), _data.data()),
+            ByIndexIterator_t(_axes[0].data() + _axes[0].size(),
+                              _data.data() + _data.size()));
       else
         return TimeSerieView(begin(), end());
     }
@@ -280,19 +281,19 @@ namespace TimeSeries
     auto begin()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(_axes[0].data(), _data.data(), _shape);
+        return Iterator_t(_axes[0].data(), _data.data());
       else
-        return IteratorND_t<NDim - 1>(_axes[0].data(), _data.data(), _shape);
+        return IteratorND_t<NDim - 1>(_axes[0].data(), _data.data(),
+                                      _element_shape());
     }
     auto end()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(_axes[0].data() + size(), _data.data() + size(),
-                          _shape);
+        return Iterator_t(_axes[0].data() + size(), _data.data() + size());
       else
         return IteratorND_t<NDim - 1>(_axes[0].data() + _axes[0].size(),
-                                      _data.data() + _data.data().size(),
-                                      _shape);
+                                      _data.data() + _data.size(),
+                                      _element_shape());
     }
 
     std::string& unit(unsigned int axis_index) override

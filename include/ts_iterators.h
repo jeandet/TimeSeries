@@ -12,6 +12,17 @@
 
 namespace TimeSeries::details::iterators
 {
+  template<int NDim, typename T> std::size_t _element_size(const T& shape)
+  {
+    if constexpr(NDim > 0)
+    {
+      auto size = std::accumulate(std::cbegin(shape), std::cend(shape), 1ul,
+                                  std::multiplies<std::size_t>());
+      return size;
+    }
+    else
+      return 1;
+  }
   template<typename itValue_t, typename ts_t, int NDim, bool iterTime = true,
            bool isConst = false>
   struct _iterator : public details::arithmetic::_incrementable_object<
@@ -31,30 +42,43 @@ namespace TimeSeries::details::iterators
     friend ts_t;
     using indexes_t = _iterator_indexes<ts_t, iterTime>;
 
-    std::size_t _element_size(const std::vector<std::size_t>& shape) const
-    {
-      if constexpr(NDim > 1)
-        return std::accumulate(std::cbegin(shape) + 1, std::cend(shape), 1ul,
-                               std::multiplies<std::size_t>());
-      else
-        return 1;
-    }
+    template<typename Dummy = void,
+             typename       = std::enable_if_t<(NDim > 0), Dummy>>
+    _iterator(double* time, raw_value_type* data,
+              const std::vector<std::size_t>& shape)
+        : _indexes{time, data, _element_size<NDim>(shape)}, _CurrentValue{time,
+                                                                          data,
+                                                                          shape}
+    {}
 
-    explicit _iterator(double* time, raw_value_type* data,
-                       const std::vector<std::size_t>& shape)
-        : _indexes{time, data, _element_size(shape)}
-    {
-      _updateValue();
-    }
+    template<typename Dummy = void,
+             typename       = std::enable_if_t<(NDim > 0), Dummy>>
+    _iterator(double* time, raw_value_type* data,
+              const std::array<std::size_t, NDim>& shape)
+        : _indexes{time, data, _element_size<NDim>(shape)}, _CurrentValue{time,
+                                                                          data,
+                                                                          shape}
+    {}
+
+    template<typename Dummy = void,
+             typename       = std::enable_if_t<NDim == 0, Dummy>>
+    _iterator(double* time, raw_value_type* data)
+        : _indexes{time, data, 1}, _CurrentValue{time, data}
+    {}
 
     _iterator() = delete;
 
     _iterator(const _iterator& other) : _indexes{other._indexes}
     {
       _updateValue();
+      if constexpr(NDim > 0) _updateShape(other._CurrentValue.shape());
     }
 
-    _iterator(_iterator&& other) : _indexes{other._indexes} { _updateValue(); }
+    _iterator(_iterator&& other) : _indexes{other._indexes}
+    {
+      _updateValue();
+      if constexpr(NDim > 0) _updateShape(other._CurrentValue.shape());
+    }
 
     virtual ~_iterator() noexcept = default;
 
@@ -97,6 +121,11 @@ namespace TimeSeries::details::iterators
     void _updateValue()
     {
       _CurrentValue._update_pointers(_indexes.t_ptr(), _indexes.v_ptr());
+    }
+
+    void _updateShape(const std::array<std::size_t, NDim>& shape)
+    {
+      if constexpr(NDim > 0) _CurrentValue.reshape(shape);
     }
 
     const itValue_t* operator->() const { return &_CurrentValue; }

@@ -96,9 +96,9 @@ endmacro(declare_test)
 
 
 declare_test(SimpleScalar SimpleScalar tests/SimpleScalar/main.cpp)
-#declare_test(STL_ALGS STL_ALGS tests/STL_ALGS/main.cpp)
+declare_test(STL_ALGS STL_ALGS tests/STL_ALGS/main.cpp)
 declare_test(GenericTS GenericTS tests/GenericTS/main.cpp)
-#declare_test(TimeSerieND TimeSerieND tests/TimeSerieND/main.cpp)
+declare_test(TimeSerieND TimeSerieND tests/TimeSerieND/main.cpp)
 declare_test(TSIterators TSIterators tests/TSIterators/main.cpp)
 declare_test(TSIteratorValues TSIteratorValues tests/TSIteratorValues/main.cpp)
 

@@ -1,11 +1,13 @@
 #ifndef TIMESERIES_H
 #define TIMESERIES_H
+#include "ts_arithmetic.h"
+#include "ts_iterator_indexes.h"
+#include "ts_iterator_value.h"
+#include "ts_iterators.h"
+#include "ts_time.h"
+
 #include <iostream>
 #include <memory>
-#include <ts_arithmetic.h>
-#include <ts_iterator_value.h>
-#include <ts_iterators.h>
-#include <ts_time.h>
 #include <vector>
 
 namespace TimeSeries
@@ -88,14 +90,17 @@ namespace TimeSeries
 
   public:
     using type = TimeSerie<RawValueType, TimeSerieType, NDim, container_t>;
-    using IteratorValue = details::iterators::IteratorValue<RawValueType, type>;
+
+    using IteratorValue = details::iterators::IteratorValue<
+        RawValueType, details::iterators::_iterator_indexes<type>>;
     using raw_value_type = RawValueType;
     using value_type     = typename std::conditional<
         NDim == 1, details::iterators::IteratorValue<RawValueType, type>,
         details::iterators::TimeSerieSlice<RawValueType, type, NDim - 1,
                                            false>>::type;
-    using ByIndexIteratorValue =
-        details::iterators::IteratorValue<RawValueType, type, false>;
+    using ByIndexIteratorValue = details::iterators::IteratorValue<
+        RawValueType, details::iterators::_iterator_indexes<type, false>,
+        false>;
 
     template<typename val_t, typename... args>
     using container_type = class container_t<val_t, args...>;
@@ -116,6 +121,8 @@ namespace TimeSeries
     template<typename _ValueType, typename _ts_type, int _NDim,
              bool compareValue>
     friend struct details::iterators::TimeSerieSlice;
+    friend struct details::iterators::_iterator_indexes<type>;
+    friend struct details::iterators::_iterator_indexes<type, true>;
 
     TimeSerie() : _shape(NDim, 0) {}
 
@@ -275,7 +282,7 @@ namespace TimeSeries
     auto begin()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(std::begin(_axes[0]), std::begin(_data));
+        return Iterator_t(this, 0, 0, 1);
       else
         return IteratorND_t<NDim - 1>(std::begin(_axes[0]), std::begin(_data),
                                       _element_shape(), _element_size());
@@ -283,7 +290,7 @@ namespace TimeSeries
     auto end()
     {
       if constexpr(NDim == 1)
-        return Iterator_t(std::end(_axes[0]), std::end(_data));
+        return Iterator_t(this, size(), size(), 1);
       else
         return IteratorND_t<NDim - 1>(std::end(_axes[0]), std::end(_data),
                                       _element_shape(), _element_size());

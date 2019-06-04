@@ -1,10 +1,13 @@
 #ifndef TS_ITERATORS_H
 #define TS_ITERATORS_H
+#include "ts_arithmetic.h"
+#include "ts_iterator_indexes.h"
+
 #include <array>
 #include <functional>
 #include <iostream>
 #include <iterator>
-#include <ts_arithmetic.h>
+#include <memory>
 
 namespace TimeSeries::details::iterators
 {
@@ -23,102 +26,65 @@ namespace TimeSeries::details::iterators
     using reference       = value_type&;
 
     friend ts_t;
-    template<typename T, typename... args>
-    using container_t = typename ts_t::template container_type<T, args...>;
+    using indexes_t = _iterator_indexes<ts_t, iterTime>;
 
-    using raw_value_it_t = decltype(
-        std::declval<container_t<typename ts_t::raw_value_type>>().begin());
+    explicit _iterator(ts_t* ts, std::size_t position,
+                       std::size_t time_position, std::size_t increment)
+        : _indexes{ts, position, time_position, increment}
+    {
+      _updateValue();
+    }
 
-    using time_it_t = decltype(std::declval<container_t<double>>().begin());
-
-    explicit _iterator(const time_it_t& time_it, const raw_value_it_t& it,
-                       const std::array<std::size_t, NDim>& shape,
-                       std::size_t increment)
-        : _raw_values_it{it}, _time_it{time_it},
-          _CurrentValue{*time_it, it, shape}, _increment{increment}
-    {}
-
-    explicit _iterator(double& t, const raw_value_it_t& it,
-                       const std::array<std::size_t, NDim>& shape,
-                       std::size_t increment)
-        : _raw_values_it{it}, _CurrentValue{t, it, shape}, _increment{increment}
-    {}
-
-    explicit _iterator(const time_it_t& time_it, const raw_value_it_t& it)
-        : _raw_values_it{it}, _time_it{time_it}, _CurrentValue{*time_it, *it},
-          _increment{1}
-    {}
-
-    explicit _iterator(double& t, const raw_value_it_t& it)
-        : _raw_values_it{it}, _CurrentValue{t, *it}, _increment{1}
-    {}
     _iterator() = delete;
-    // Should use SFINAE
-    _iterator(const _iterator& other)
-        : _raw_values_it{other._raw_values_it}, _time_it{other._time_it},
-          _increment{other._increment}
+
+    _iterator(const _iterator& other) : _indexes{other._indexes}
     {
-      _CurrentValue = other._CurrentValue;
-      next(0);
+      _updateValue();
     }
 
-    _iterator(_iterator&& other)
-        : _raw_values_it{other._raw_values_it}, _time_it{other._time_it},
-          _increment(other._increment)
-    {
-      _CurrentValue = other._CurrentValue;
-      next(0);
-    }
+    _iterator(_iterator&& other) : _indexes{other._indexes} { _updateValue(); }
 
     virtual ~_iterator() noexcept = default;
 
     _iterator& operator=(const _iterator& other)
     {
-      _time_it       = other._time_it;
-      _raw_values_it = other._raw_values_it;
-      _increment     = other._increment;
-      next(0);
+      _indexes = other._indexes;
+      _updateValue();
       return *this;
     }
 
     friend void swap(_iterator& lhs, _iterator& rhs)
     {
-      std::swap(lhs._time_it, rhs._time_it);
-      std::swap(lhs._raw_values_it, rhs._raw_values_it);
-      std::swap(lhs._increment, rhs._increment);
-      lhs.next(0);
-      rhs.next(0);
+      std::swap(lhs._indexes, rhs._indexes);
+      std::swap(lhs._CurrentValue, rhs._CurrentValue);
     }
 
     void next(int offset)
     {
-      this->_raw_values_it += offset * _increment;
-      if constexpr(iterTime)
-      {
-        this->_time_it += offset;
-        this->_CurrentValue._update(*_time_it, _raw_values_it);
-      }
-      else
-      {
-        this->_CurrentValue._update(_raw_values_it);
-      }
+      _indexes.next(offset);
+      _updateValue();
     }
 
     void prev(int offset) { next(-offset); }
 
     bool equals(const _iterator& other) const
     {
-      return _raw_values_it == other._raw_values_it;
+      return _indexes.equals(other._indexes);
     }
 
     bool gt(const _iterator& other) const
     {
-      return _raw_values_it > other._raw_values_it;
+      return _indexes.gt(other._indexes);
     }
 
     std::size_t distance(const _iterator& other) const
     {
-      return std::distance(other._raw_values_it, _raw_values_it) / _increment;
+      return _indexes.distance(other._indexes);
+    }
+
+    void _updateValue()
+    {
+      _CurrentValue._update_pointers(_indexes.t_ptr(), _indexes.v_ptr());
     }
 
     const itValue_t* operator->() const { return &_CurrentValue; }
@@ -132,10 +98,8 @@ namespace TimeSeries::details::iterators
     }
 
   protected:
-    raw_value_it_t _raw_values_it;
-    time_it_t _time_it;
-    itValue_t _CurrentValue;
-    std::size_t _increment = 1;
+    indexes_t _indexes;
+    value_type _CurrentValue;
   };
 } // namespace TimeSeries::details::iterators
 

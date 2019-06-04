@@ -1,45 +1,41 @@
 #ifndef TS_ITERATOR_VALUE_H
 #define TS_ITERATOR_VALUE_H
+#include "ts_iterator_indexes.h"
+#include "ts_iterators.h"
+#include "ts_time.h"
+
 #include <cassert>
 #include <functional>
 #include <iostream>
 #include <memory>
 #include <numeric>
-#include <ts_iterators.h>
-#include <ts_time.h>
 #include <vector>
 
 namespace TimeSeries::details::iterators
 {
-  template<typename ValueType, typename ts_type, bool compareValue = true>
-  struct IteratorValue : public details::arithmetic::_comparable_object<
-                             IteratorValue<ValueType, ts_type, compareValue>>,
-                         public details::arithmetic::_addable_object<
-                             IteratorValue<ValueType, ts_type, compareValue>>
+  template<typename ValueType, typename index_type, bool compareValue = true>
+  struct IteratorValue
+      : public details::arithmetic::_comparable_object<
+            IteratorValue<ValueType, index_type, compareValue>>,
+        public details::arithmetic::_addable_object<
+            IteratorValue<ValueType, index_type, compareValue>>
   {
-    template<typename T, typename... args>
-    using container_t = typename ts_type::template container_type<T, args...>;
-    using container_it_t =
-        decltype(std::declval<container_t<ValueType>>().begin());
-
-    IteratorValue() : _t_{0.}, _v_{0.}, _t{std::ref(_t_)}, _v{std::ref(_v_)} {}
+    IteratorValue() noexcept = default;
 
     virtual ~IteratorValue() noexcept = default;
 
-    explicit IteratorValue(double& t, ValueType& v)
-        : _t{std::ref(t)}, _v{std::ref(v)}
-    {}
+    IteratorValue(double* t, ValueType* v) : _t_ptr{t}, _v_ptr{v}, _t{0.} {}
 
     IteratorValue(const std::pair<double, ValueType>& value)
-        : _t_{value.first}, _v_{value.second}, _t{std::ref(_t_)}, _v{std::ref(
-                                                                      _v_)}
+        : _t_ptr{nullptr}, _v_ptr{nullptr}, _t{value.first}, _v{value.second}
     {}
 
-    explicit IteratorValue(const IteratorValue& other, bool do_not_detach)
-        : _t{other._t}, _v{other._v}
-    {
-      assert(do_not_detach == true);
-    }
+    // TODO Remove?
+    //    explicit IteratorValue(const IteratorValue& other, bool do_not_detach)
+    //        : _indexes{other._indexes}, _v{other._v}, _t{other._t}
+    //    {
+    //      assert(do_not_detach == true);
+    //    }
 
     /**
      * @brief IteratorValue rvalue copy ctor, this means that a value is built
@@ -47,7 +43,7 @@ namespace TimeSeries::details::iterators
      * @param other
      */
     IteratorValue(IteratorValue&& other)
-        : _t_{other.t()}, _v_{other.v()}, _t{std::ref(_t_)}, _v{std::ref(_v_)}
+        : _t_ptr{nullptr}, _v_ptr{nullptr}, _t{other.t()}, _v{other.v()}
     {}
 
     /**
@@ -56,19 +52,13 @@ namespace TimeSeries::details::iterators
      * @param other
      */
     IteratorValue(const IteratorValue& other)
-        : _t_{other.t()}, _v_{other.v()}, _t{std::ref(_t_)}, _v{std::ref(_v_)}
+        : _t_ptr{nullptr}, _v_ptr{nullptr}, _t{other.t()}, _v{other.v()}
     {}
 
-    /**
-     * @brief _update updates value and time pointing refs, must be called from
-     * an iterator!
-     * @param t
-     * @param begin
-     */
-    void _update(double& t, const container_it_t& begin)
+    void _update_pointers(double* t, ValueType* v)
     {
-      _t = std::ref(t);
-      _update(begin);
+      _t_ptr = t;
+      _v_ptr = v;
     }
 
     /**
@@ -77,7 +67,7 @@ namespace TimeSeries::details::iterators
      * @param t
      * @param begin
      */
-    void _update(const container_it_t& begin) { _v = std::ref(*begin); }
+    // void _update(const container_it_t& begin) { _v = std::ref(*begin); }
 
     friend bool operator==(const IteratorValue& itVal, const ValueType& value)
     {
@@ -86,34 +76,34 @@ namespace TimeSeries::details::iterators
 
     IteratorValue& operator=(const IteratorValue& other)
     {
-      _v.get() = other.v();
-      _t.get() = other.t();
-      return *this;
-    }
-
-    IteratorValue& operator=(const std::pair<double, ValueType>& value)
-    {
-      _v.get() = value.second;
-      _t.get() = value.first;
+      t() = other.t();
+      v() = other.v();
       return *this;
     }
 
     IteratorValue& operator=(IteratorValue&& other)
     {
-      _v.get() = other.v();
-      _t.get() = other.t();
+      t() = other.t();
+      v() = other.v();
+      return *this;
+    }
+
+    IteratorValue& operator=(const std::pair<double, ValueType>& value)
+    {
+      t() = value.first;
+      v() = value.second;
       return *this;
     }
 
     IteratorValue& operator=(ValueType value)
     {
-      _v.get() = value;
+      v() = value;
       return *this;
     }
 
     IteratorValue& operator=(Second value)
     {
-      _t.get() = static_cast<double>(value);
+      t() = static_cast<double>(value);
       return *this;
     }
 
@@ -132,14 +122,43 @@ namespace TimeSeries::details::iterators
 
     IteratorValue iadd(IteratorValue& other)
     {
+      // TODO?
       //_t.get() += other.v();
       return *this;
     }
 
-    ValueType v() const { return _v.get(); }
-    ValueType& v() { return _v.get(); }
-    double t() const { return _t.get(); }
-    double& t() { return _t.get(); }
+    inline ValueType v() const
+    {
+      if(_v_ptr) { return *_v_ptr; }
+      else
+      {
+        return _v;
+      }
+    }
+    inline ValueType& v()
+    {
+      if(_v_ptr) { return *_v_ptr; }
+      else
+      {
+        return _v;
+      }
+    }
+    inline double t() const
+    {
+      if(_t_ptr) { return *_t_ptr; }
+      else
+      {
+        return _t;
+      }
+    }
+    inline double& t()
+    {
+      if(_t_ptr) { return *_t_ptr; }
+      else
+      {
+        return _t;
+      }
+    }
 
     template<typename T> constexpr auto wrap(T pos, T size)
     {
@@ -153,10 +172,10 @@ namespace TimeSeries::details::iterators
     }
 
   private:
-    double _t_;
-    ValueType _v_;
-    std::reference_wrapper<double> _t;
-    std::reference_wrapper<ValueType> _v;
+    double* _t_ptr    = nullptr;
+    ValueType* _v_ptr = nullptr;
+    double _t         = 0.;
+    ValueType _v;
   };
 
   template<typename ValueType, typename ts_type, int NDim = 1,

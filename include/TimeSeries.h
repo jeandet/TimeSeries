@@ -146,7 +146,10 @@ namespace TimeSeries
     TimeSerie(const std::vector<std::size_t>& sizes)
         : _data(_flattenSize(sizes)), _shape(sizes)
     {
-      _axes[0].resize(*sizes.begin());
+      for(int i = 0; i < sizes.size(); i++)
+      {
+        _axes[i].resize(*(sizes.begin() + i));
+      }
       _sanity_check();
     }
 

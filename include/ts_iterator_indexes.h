@@ -5,18 +5,20 @@
 #include <ts_arithmetic.h>
 namespace TimeSeries::details::iterators
 {
-  template<typename ts_t, bool iterTime = true>
+  template<typename ValueType, bool iterTime = true>
   struct _iterator_indexes : public details::arithmetic::_incrementable_object<
-                                 _iterator_indexes<ts_t, iterTime>>,
+                                 _iterator_indexes<ValueType, iterTime>>,
                              public details::arithmetic::_comparable_object<
-                                 _iterator_indexes<ts_t, iterTime>>
+                                 _iterator_indexes<ValueType, iterTime>>
   {
-    using ValueType = typename ts_t::raw_value_type;
-    ValueType* data;
-    double* time;
+    using value_ptr_t = ValueType*;
+    using time_ptr_t  = double*;
+    value_ptr_t data;
+
+    time_ptr_t time;
     std::size_t increment = 1;
 
-    _iterator_indexes(double* time, ValueType* data, std::size_t increment)
+    _iterator_indexes(time_ptr_t time, value_ptr_t data, std::size_t increment)
         : data{data}, time{time}, increment{increment}
     {}
 

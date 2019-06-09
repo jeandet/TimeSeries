@@ -63,7 +63,7 @@ namespace
     auto s = MyTimeSerie{{6., 5., 4., 3., 2., 1.}, {1., 2, 3., 4., 5., 6.}};
     auto sorted =
         MyTimeSerie{{1., 2, 3., 4., 5., 6.}, {6., 5., 4., 3., 2., 1.}};
-    std::sort(std::begin(s.byIndex()), std::end(s.byIndex()));
+    std::sort(std::begin(s.by_index()), std::end(s.by_index()));
     EXPECT_TRUE(std::equal(std::begin(s), std::end(s), std::begin(sorted)));
   }
 

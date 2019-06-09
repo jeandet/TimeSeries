@@ -90,37 +90,38 @@ namespace TimeSeries
 
   public:
     using type = TimeSerie<RawValueType, TimeSerieType, NDim, container_t>;
-
-    using IteratorValue  = details::iterators::IteratorValue<RawValueType>;
     using raw_value_type = RawValueType;
-    using value_type     = typename std::conditional<
-        NDim == 1, details::iterators::IteratorValue<RawValueType>,
-        details::iterators::TimeSerieSlice<RawValueType, type, NDim - 1,
-                                           false>>::type;
-    using ByIndexIteratorValue =
-        details::iterators::IteratorValue<RawValueType, false>;
 
-    template<typename val_t, typename... args>
-    using container_type = class container_t<val_t, args...>;
+    using iterator_value_1d = details::iterators::IteratorValue<raw_value_type>;
 
-    using Iterator_t =
-        details::iterators::_iterator<IteratorValue, type, 0, true, false>;
-    using ByIndexIterator_t =
-        details::iterators::_iterator<ByIndexIteratorValue, type, 0, true,
-                                      false>;
+    using iterator_value_nd =
+        details::iterators::TimeSerieSlice<raw_value_type, container_t,
+                                           NDim - 1>;
 
-    template<int _NDim>
-    using IteratorND_t = details::iterators::_iterator<
-        details::iterators::TimeSerieSlice<RawValueType, type, _NDim, false>,
-        type, _NDim>;
+    using value_type = typename std::conditional_t<NDim == 1, iterator_value_1d,
+                                                   iterator_value_nd>;
 
-    using axis_t = std::vector<double>;
+    using iterator_value_1d_by_index =
+        details::iterators::IteratorValue<raw_value_type,
+                                          details::iterators::compare_time>;
+    using iterator_value_nd_by_index =
+        details::iterators::TimeSerieSlice<raw_value_type, container_t,
+                                           NDim - 1,
+                                           details::iterators::compare_time>;
 
-    template<typename _ValueType, typename _ts_type, int _NDim,
-             bool compareValue>
-    friend struct details::iterators::TimeSerieSlice;
-    friend struct details::iterators::_iterator_indexes<type>;
-    friend struct details::iterators::_iterator_indexes<type, true>;
+    using iterator_t = typename std::conditional_t<
+        NDim == 1,
+        details::iterators::_iterator<iterator_value_1d, 0,
+                                      details::iterators::iter_time>,
+        details::iterators::_iterator<iterator_value_nd, NDim - 1,
+                                      details::iterators::iter_time>>;
+
+    using iterator_by_index_t = typename std::conditional_t<
+        NDim == 1,
+        details::iterators::_iterator<iterator_value_1d_by_index, 0,
+                                      details::iterators::iter_time>,
+        details::iterators::_iterator<iterator_value_nd_by_index, NDim - 1,
+                                      details::iterators::iter_time>>;
 
     TimeSerie() : _shape(NDim, 0) {}
 
@@ -216,24 +217,22 @@ namespace TimeSeries
     }
 
     // TODO check shape here
-    TimeSerie(const Iterator_t& begin, const Iterator_t& end)
+    TimeSerie(const iterator_t& begin, const iterator_t& end)
     {
       this->resize(std::distance(begin, end));
       std::copy(begin, end, this->begin());
     }
 
-    typename std::conditional_t<
-        NDim == 1, raw_value_type&,
-        details::iterators::TimeSerieSlice<RawValueType, type, NDim - 1>>
+    typename std::conditional_t<NDim == 1, raw_value_type&, iterator_value_nd>
     operator[](std::size_t position)
     {
       if constexpr(NDim == 1)
         return _data[position];
       else
       {
-        return details::iterators::TimeSerieSlice<RawValueType, type, NDim - 1>(
-            _axes[0].data() + position,
-            _data.data() + (position * _element_size()), _element_shape());
+        return iterator_value_nd(_axes[0].data() + position,
+                                 _data.data() + (position * _element_size()),
+                                 _element_shape());
       }
     }
 
@@ -270,33 +269,43 @@ namespace TimeSeries
     }
     auto v(const std::size_t& position) { return (begin() + position)->v(); }
 
-    auto byIndex()
+    auto by_index() { return TimeSerieView(ibegin(), iend()); }
+
+    auto ibegin() noexcept
     {
       if constexpr(NDim == 1)
-        return TimeSerieView(
-            ByIndexIterator_t(_axes[0].data(), _data.data()),
-            ByIndexIterator_t(_axes[0].data() + _axes[0].size(),
-                              _data.data() + _data.size()));
+        return iterator_by_index_t(_axes[0].data(), _data.data());
       else
-        return TimeSerieView(begin(), end());
+        return iterator_by_index_t(_axes[0].data(), _data.data(),
+                                   _element_shape());
     }
 
-    auto begin()
+    auto begin() noexcept
     {
       if constexpr(NDim == 1)
-        return Iterator_t(_axes[0].data(), _data.data());
+        return iterator_t(_axes[0].data(), _data.data());
       else
-        return IteratorND_t<NDim - 1>(_axes[0].data(), _data.data(),
-                                      _element_shape());
+        return iterator_t(_axes[0].data(), _data.data(), _element_shape());
     }
-    auto end()
+
+    auto end() noexcept
     {
       if constexpr(NDim == 1)
-        return Iterator_t(_axes[0].data() + size(), _data.data() + size());
+        return iterator_t(_axes[0].data() + size(), _data.data() + size());
       else
-        return IteratorND_t<NDim - 1>(_axes[0].data() + _axes[0].size(),
-                                      _data.data() + _data.size(),
-                                      _element_shape());
+        return iterator_t(_axes[0].data() + _axes[0].size(),
+                          _data.data() + _data.size(), _element_shape());
+    }
+
+    auto iend() noexcept
+    {
+      if constexpr(NDim == 1)
+        return iterator_by_index_t(_axes[0].data() + size(),
+                                   _data.data() + size());
+      else
+        return iterator_by_index_t(_axes[0].data() + _axes[0].size(),
+                                   _data.data() + _data.size(),
+                                   _element_shape());
     }
 
     std::string& unit(unsigned int axis_index) override
@@ -375,12 +384,19 @@ namespace TimeSeries
     }
 
     template<class T>
-    auto push_back(T&& iterator) -> decltype(iterator._raw_values_it, void())
+    auto push_back(const T&& iterator)
+        -> decltype(iterator.raw_value_ptr_type, void())
     {
-      std::copy(iterator._raw_values_it,
-                iterator._raw_values_it + iterator._increment,
-                std::back_inserter(_data));
-      _axes[0].push_back(*(iterator._time_it));
+      _data.push_back(iterator->v());
+      _axes[0].push_back(iterator->t());
+      _shape[0] = _axes[0].size();
+    }
+
+    template<class T>
+    auto push_back(const T&& value) -> decltype(value.v(), void())
+    {
+      _data.push_back(value.v());
+      _axes[0].push_back(value.t());
       _shape[0] = _axes[0].size();
     }
 

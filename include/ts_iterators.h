@@ -12,6 +12,9 @@
 
 namespace TimeSeries::details::iterators
 {
+  constexpr auto iter_time      = true;
+  constexpr auto dont_iter_time = false;
+
   template<int NDim, typename T> std::size_t _element_size(const T& shape)
   {
     if constexpr(NDim > 0)
@@ -23,28 +26,28 @@ namespace TimeSeries::details::iterators
     else
       return 1;
   }
-  template<typename itValue_t, typename ts_t, int NDim, bool iterTime = true,
-           bool isConst = false>
+  template<typename itValue_t, int NDim, bool iterTime = true>
   struct _iterator : public details::arithmetic::_incrementable_object<
-                         _iterator<itValue_t, ts_t, NDim, iterTime, isConst>>,
+                         _iterator<itValue_t, NDim, iterTime>>,
                      public details::arithmetic::_comparable_object<
-                         _iterator<itValue_t, ts_t, NDim, iterTime, isConst>>
+                         _iterator<itValue_t, NDim, iterTime>>
   {
     using iterator_category = std::random_access_iterator_tag;
-    using value_type =
-        typename std::conditional<isConst, const itValue_t, itValue_t>::type;
-    using difference_type = std::ptrdiff_t;
-    using pointer         = void;
-    using reference       = value_type&;
+    using value_type        = itValue_t;
+    using difference_type   = std::ptrdiff_t;
+    using pointer           = void;
+    using reference         = value_type&;
 
-    using raw_value_type = typename ts_t::raw_value_type;
+    using raw_value_type = typename itValue_t::raw_value_type;
 
-    friend ts_t;
-    using indexes_t = _iterator_indexes<ts_t, iterTime>;
+    using raw_value_ptr_type = raw_value_type*;
+    using time_ptr_t         = double*;
+
+    using indexes_t = _iterator_indexes<raw_value_type, iterTime>;
 
     template<typename Dummy = void,
              typename       = std::enable_if_t<(NDim > 0), Dummy>>
-    _iterator(double* time, raw_value_type* data,
+    _iterator(time_ptr_t time, raw_value_ptr_type data,
               const std::vector<std::size_t>& shape)
         : _indexes{time, data, _element_size<NDim>(shape)}, _CurrentValue{time,
                                                                           data,
@@ -53,7 +56,7 @@ namespace TimeSeries::details::iterators
 
     template<typename Dummy = void,
              typename       = std::enable_if_t<(NDim > 0), Dummy>>
-    _iterator(double* time, raw_value_type* data,
+    _iterator(time_ptr_t time, raw_value_ptr_type data,
               const std::array<std::size_t, NDim>& shape)
         : _indexes{time, data, _element_size<NDim>(shape)}, _CurrentValue{time,
                                                                           data,
@@ -62,23 +65,19 @@ namespace TimeSeries::details::iterators
 
     template<typename Dummy = void,
              typename       = std::enable_if_t<NDim == 0, Dummy>>
-    _iterator(double* time, raw_value_type* data)
+    _iterator(time_ptr_t time, raw_value_ptr_type data)
         : _indexes{time, data, 1}, _CurrentValue{time, data}
     {}
 
     _iterator() = delete;
 
-    _iterator(const _iterator& other) : _indexes{other._indexes}
-    {
-      _updateValue();
-      if constexpr(NDim > 0) _updateShape(other._CurrentValue.shape());
-    }
+    _iterator(const _iterator& other)
+        : _indexes{other._indexes}, _CurrentValue(other._CurrentValue, true)
+    {}
 
-    _iterator(_iterator&& other) : _indexes{other._indexes}
-    {
-      _updateValue();
-      if constexpr(NDim > 0) _updateShape(other._CurrentValue.shape());
-    }
+    _iterator(_iterator&& other)
+        : _indexes{other._indexes}, _CurrentValue(other._CurrentValue, true)
+    {}
 
     virtual ~_iterator() noexcept = default;
 
@@ -128,11 +127,11 @@ namespace TimeSeries::details::iterators
       if constexpr(NDim > 0) _CurrentValue.reshape(shape);
     }
 
-    const itValue_t* operator->() const { return &_CurrentValue; }
-    const itValue_t& operator*() const { return _CurrentValue; }
-    itValue_t* operator->() { return &_CurrentValue; }
-    itValue_t& operator*() { return _CurrentValue; }
-    itValue_t& operator[](int offset) const
+    const value_type* operator->() const { return &_CurrentValue; }
+    const value_type& operator*() const { return _CurrentValue; }
+    value_type* operator->() { return &_CurrentValue; }
+    value_type& operator*() { return _CurrentValue; }
+    value_type& operator[](int offset) const
     {
       auto copy = *this;
       return *(copy + offset);

@@ -28,6 +28,14 @@ namespace TimeSeries::details::iterators
         : data{data}, time{time}, increment{increment}
     {}
 
+    _iterator_indexes& operator=(const _iterator_indexes& other)
+    {
+      data = other.data;
+      time = other.time;
+      increment = other.increment;
+      return *this;
+    }
+
     friend void swap(_iterator_indexes& lhs, _iterator_indexes& rhs)
     {
       std::swap(lhs.data, rhs.data);

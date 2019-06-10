@@ -146,7 +146,7 @@ namespace
       return i++;
     });
     auto s = TimeSeries::ScalarTs(data, data);
-    for(int i = 0; i < s.shape()[0]; i++)
+    for(int i = 0; i < static_cast<int>(s.shape()[0]); i++)
     {
       EXPECT_EQ(double(i), s[i]);
     }

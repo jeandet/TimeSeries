@@ -137,7 +137,7 @@ namespace TimeSeries
         : _data(_flattenSize(sizes)), _shape(sizes)
     {
       assert(sizes.size() == NDim);
-      for(int i = 0; i < sizes.size(); i++)
+      for(int i = 0; i < static_cast<int>(sizes.size()); i++)
       {
         _axes[i].resize(*(sizes.begin() + i));
       }

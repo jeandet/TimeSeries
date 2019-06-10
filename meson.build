@@ -20,6 +20,5 @@ foreach benchmark:['benchmarks']
                     dependencies:[benchmark_dep, time_series_dep],
                     install: true
                     )
-    benchmark(test, exe, timeout: 120)
+    benchmark(test, exe, timeout: 120, args:['--benchmark_format=json','--benchmark_out=ts_benchmark.json'])
 endforeach
-

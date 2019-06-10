@@ -87,7 +87,7 @@ namespace
       }
     }
     {
-      std::vector<double> data(100 * 10 * 5);
+      std::vector<double> data(100 * 50 * 30);
       std::vector<double> x(100);
       std::generate(std::begin(data), std::end(data), []() {
         static double i = 0;
@@ -97,19 +97,22 @@ namespace
         static double i = 0;
         return i++;
       });
-      auto s       = MyTimeSerie3d(x, data, {100, 10, 5});
+      auto s       = MyTimeSerie3d(x, data, {100, 50, 30});
       double value = 0.;
       for(std::size_t i = 0; i < s.shape()[0]; i++)
       {
         auto b1 = *(s.begin() + i);
+        EXPECT_EQ(b1.t(), x[i]);
         for(std::size_t j = 0; j < s.shape()[1]; j++)
         {
           auto b2 = *(b1.begin() + j);
+          EXPECT_EQ(b2.t(), x[i]);
           for(std::size_t k = 0; k < s.shape()[2]; k++)
           {
             auto b3 = *(b2.begin() + k);
             EXPECT_EQ(value, s[i][j][k]);
             EXPECT_EQ(b3.v(), value++);
+            EXPECT_EQ(b3.t(), x[i]);
           }
         }
       }

@@ -20,6 +20,7 @@ namespace
   {
     auto s = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
     auto v = *std::begin(s);
+    EXPECT_EQ(v.t(), 0.);
     EXPECT_EQ(v, 33.);
   }
 
@@ -28,14 +29,19 @@ namespace
     auto s = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
     auto v = *std::begin(s);
     v      = 44.;
+    v      = TimeSeries::Second(111.);
     EXPECT_EQ(v, 44.);
+    EXPECT_EQ(v.t(), 111.);
     EXPECT_EQ(*std::begin(s), 33.);
+    EXPECT_EQ(std::begin(s)->t(), 0.);
   }
 
   TEST(ATSIteratorValue, RefModifiesTS)
   {
     auto s         = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
     *std::begin(s) = 44.;
+    *std::begin(s) = TimeSeries::Second(123.);
+    EXPECT_EQ(std::begin(s)->t(), 123.);
     EXPECT_EQ(*std::begin(s), 44.);
   }
 

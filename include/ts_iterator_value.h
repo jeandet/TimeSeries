@@ -57,7 +57,7 @@ namespace TimeSeries::details::iterators
     {}
 
     IteratorValue(const IteratorValue& other, bool built_from_iterator)
-        : _t_ptr{other._t_ptr}, _v_ptr{other._v_ptr}, _t{other._t}, _v{other._v}
+        : _t_ptr{other._t_ptr}, _v_ptr{other._v_ptr}
     {
       if(!built_from_iterator) throw;
     }
@@ -185,8 +185,9 @@ namespace TimeSeries::details::iterators
     using sub_slice_t =
         TimeSerieSlice<ValueType, container_t, NDim - 1, compareValue>;
     using iterator_t = typename std::conditional_t<
-        NDim == 1, details::iterators::_iterator<iterator_value_1d, 0, true>,
-        details::iterators::_iterator<sub_slice_t, NDim - 1, true>>;
+        NDim == 1,
+        details::iterators::_iterator<iterator_value_1d, 0, dont_iter_time>,
+        details::iterators::_iterator<sub_slice_t, NDim - 1, dont_iter_time>>;
 
     using raw_value_ptr_type = ValueType*;
     using time_ptr_t         = double*;

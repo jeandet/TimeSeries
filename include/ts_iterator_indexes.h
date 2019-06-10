@@ -13,10 +13,16 @@ namespace TimeSeries::details::iterators
   {
     using value_ptr_t = ValueType*;
     using time_ptr_t  = double*;
-    value_ptr_t data;
 
+    value_ptr_t data;
     time_ptr_t time;
     std::size_t increment = 1;
+
+    _iterator_indexes() = delete;
+
+    _iterator_indexes(const _iterator_indexes& other)
+        : data{other.data}, time{other.time}, increment{other.increment}
+    {}
 
     _iterator_indexes(time_ptr_t time, value_ptr_t data, std::size_t increment)
         : data{data}, time{time}, increment{increment}

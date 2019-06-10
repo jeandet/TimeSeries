@@ -4,6 +4,10 @@
 [![CPP17](https://img.shields.io/badge/Language-C++17-blue.svg)]()
 [![Build Status](https://travis-ci.org/jeandet/TimeSeries.svg?branch=master)](https://travis-ci.org/jeandet/TimeSeries)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/jeandet/TimeSeries.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/jeandet/TimeSeries/alerts/)
+[![Tests](https://hephaistos.lpp.polytechnique.fr/teamcity/app/rest/builds/buildType:(id:TimeSeries_Tests)/statusIcon)](https://hephaistos.lpp.polytechnique.fr/teamcity/viewType.html?buildTypeId=TimeSeries_Tests&guest=1)
+[![Sanitizers](https://hephaistos.lpp.polytechnique.fr/teamcity/app/rest/builds/buildType:(id:TimeSeries_Sanitizers)/statusIcon)](https://hephaistos.lpp.polytechnique.fr/teamcity/viewType.html?buildTypeId=TimeSeries_Sanitizers&guest=1)
+[![Benchmarks](https://hephaistos.lpp.polytechnique.fr/teamcity/app/rest/builds/buildType:(id:TimeSeries_Benchmarks)/statusIcon)](https://hephaistos.lpp.polytechnique.fr/teamcity/viewType.html?buildTypeId=TimeSeries_Benchmarks&guest=1)
+
 
 | GCC7              | Clang7            | Clang6            |
 |-------------------|-------------------|-------------------|

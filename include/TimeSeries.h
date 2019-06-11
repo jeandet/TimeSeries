@@ -216,11 +216,17 @@ namespace TimeSeries
       _sanity_check();
     }
 
-    // TODO check shape here
-    TimeSerie(const iterator_t& begin, const iterator_t& end)
+    TimeSerie(const iterator_t& begin_it, const iterator_t& end_it)
     {
-      this->resize(std::distance(begin, end));
-      std::copy(begin, end, this->begin());
+      auto count = std::distance(begin_it, end_it);
+      this->_shape.resize(count);
+      if constexpr(NDim > 1)
+      {
+        auto shape = begin_it->shape();
+        std::copy(std::cbegin(shape), std::cend(shape), std::begin(_shape) + 1);
+      }
+      this->resize(count);
+      std::copy(begin_it, end_it, this->begin());
     }
 
     typename std::conditional_t<NDim == 1, raw_value_type&, iterator_value_nd>
@@ -257,6 +263,7 @@ namespace TimeSeries
     {
       _axes[0].resize(newSize);
       _data.resize(newSize * _element_size());
+      _shape[0] = _axes[0].size();
     }
 
     double t(const std::size_t& position) const override

@@ -289,9 +289,7 @@ namespace TimeSeries::details::iterators
       {
         assert(_flatSize() == other._flatSize());
       }
-      std::copy(std::cbegin(other._begin),
-                std::cbegin(other._begin) + other._flatSize(),
-                std::begin(this->_begin));
+      std::copy(other._begin, other._begin + other._flatSize(), this->_begin);
       t() = other.t();
       return *this;
     }

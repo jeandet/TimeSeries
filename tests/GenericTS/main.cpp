@@ -25,6 +25,17 @@ namespace
     EXPECT_EQ(3, s2.size());
   }
 
+  TEST(AGenericTS, CanBeConstructedFromRange)
+  {
+    auto s  = MyTimeSerie({0., 1., 2., 3.}, {44., 33., 22., 11.});
+    auto s2 = MyTimeSerie(s.begin() + 1, s.end() - 1);
+    EXPECT_EQ(s.size() - 2, s2.size());
+    EXPECT_EQ(1., s2.begin()->t());
+    EXPECT_EQ(33., s2.begin()->v());
+    EXPECT_EQ(2., (s2.end() - 1)->t());
+    EXPECT_EQ(22., (s2.end() - 1)->v());
+  }
+
   TEST(AGenericTS, CanSetByPair)
   {
     auto s  = MyTimeSerie({0., 1., 2.}, {33., 22., 11.});

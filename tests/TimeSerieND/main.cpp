@@ -21,6 +21,15 @@ namespace
     auto s3d = MyTimeSerie3d();
   }
 
+  TEST(ATimeSerieND, CanBeConstructedFromRange)
+  {
+    auto s  = MyTimeSerie2d({0., 1., 2., 3.}, {44., 33., 22., 11.}, {4, 1});
+    auto s2 = MyTimeSerie2d(s.begin() + 1, s.end() - 1);
+    EXPECT_EQ(s.size() - 2, s2.size());
+    EXPECT_EQ(1., s2.begin()->t());
+    EXPECT_EQ(2., (s2.end() - 1)->t());
+  }
+
   TEST(ATimeSerieND, CanCompareIterators)
   {
     auto s   = MyTimeSerie2d({0., 1., 2.}, {33., 22., 11.}, {3, 1});

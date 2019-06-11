@@ -171,31 +171,27 @@ namespace TimeSeries::details::iterators
     ValueType _v;
   };
 
-  template<typename ValueType,
-           template<typename val_t, typename...> class container_t =
-               std::vector,
-           int NDim = 1, bool compareValue = false>
-  struct TimeSerieSlice
-      : public details::arithmetic::_comparable_object<
-            TimeSerieSlice<ValueType, container_t, NDim, compareValue>>
+  template<typename TS, int NDim, bool compareValue = false>
+  struct TimeSerieSlice : public details::arithmetic::_comparable_object<
+                              TimeSerieSlice<TS, NDim, compareValue>>
   {
-  private:
+    using raw_value_type     = typename TS::raw_value_type;
+    using raw_value_ptr_type = raw_value_type*;
+    using time_ptr_t         = double*;
+    using data_t             = typename TS::data_t;
     using iterator_value_1d =
-        details::iterators::IteratorValue<ValueType, true>;
-    using sub_slice_t =
-        TimeSerieSlice<ValueType, container_t, NDim - 1, compareValue>;
-    using iterator_t = typename std::conditional_t<
+        details::iterators::IteratorValue<raw_value_type, true>;
+    using sub_slice_t = TimeSerieSlice<TS, NDim - 1, compareValue>;
+    using iterator_t  = typename std::conditional_t<
         NDim == 1,
         details::iterators::_iterator<iterator_value_1d, 0, dont_iter_time>,
         details::iterators::_iterator<sub_slice_t, NDim - 1, dont_iter_time>>;
 
-    using raw_value_ptr_type = ValueType*;
-    using time_ptr_t         = double*;
-
+  private:
     double _t;
-    time_ptr_t _t_ptr          = nullptr;
-    std::vector<ValueType>* _v = nullptr;
-    const int _NDim            = NDim;
+    time_ptr_t _t_ptr = nullptr;
+    data_t* _v        = nullptr;
+    const int _NDim   = NDim;
     std::array<std::size_t, NDim> _shape;
     raw_value_ptr_type _begin = nullptr;
 
@@ -227,8 +223,7 @@ namespace TimeSeries::details::iterators
     }
 
   public:
-    using raw_value_type = ValueType;
-    TimeSerieSlice() : _t_ptr{nullptr}, _t{0.}, _v{new container_t<ValueType>}
+    TimeSerieSlice() : _t_ptr{nullptr}, _t{0.}, _v{new data_t}
     {
       _begin = _v->data();
     }
@@ -248,7 +243,7 @@ namespace TimeSeries::details::iterators
     TimeSerieSlice(const TimeSerieSlice& other)
         : _t{other.t()}, _shape{other._shape}
     {
-      _v     = new container_t<ValueType>(other._flatSize());
+      _v     = new data_t(other._flatSize());
       _begin = _v->data();
       std::copy(other._begin, other._begin + _v->size(), std::begin(*_v));
     }
@@ -265,7 +260,7 @@ namespace TimeSeries::details::iterators
       if(other._v) { std::swap(other._v, _v); }
       else
       {
-        _v = new container_t<ValueType>(other._flatSize());
+        _v = new data_t(other._flatSize());
         std::copy(other._begin, other._begin + _v->size(), std::begin(*_v));
       }
       _begin = _v->data();
@@ -327,7 +322,7 @@ namespace TimeSeries::details::iterators
       _t_ptr = t;
     }
 
-    TimeSerieSlice& operator=(const container_t<ValueType>& value)
+    TimeSerieSlice& operator=(const data_t& value)
     {
       std::copy(value.cbegin(), value.cend(), _container_begin<NDim>(*this));
       return *this;
@@ -409,7 +404,7 @@ namespace TimeSeries::details::iterators
     auto flat_end() { return _begin + _flatSize(); }
     auto flat_end() const { return _begin + _flatSize(); }
 
-    typename std::conditional_t<NDim == 1, ValueType&, sub_slice_t>
+    typename std::conditional_t<NDim == 1, raw_value_type&, sub_slice_t>
     operator[](const std::size_t& position)
     {
       if constexpr(NDim == 1)
@@ -427,7 +422,8 @@ namespace TimeSeries::details::iterators
       }
     }
 
-    typename std::conditional_t<NDim == 1, const ValueType&, const sub_slice_t>
+    typename std::conditional_t<NDim == 1, const raw_value_type&,
+                                const sub_slice_t>
     operator[](const std::size_t& position) const
     {
       if constexpr(NDim == 1)

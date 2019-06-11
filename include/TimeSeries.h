@@ -91,12 +91,13 @@ namespace TimeSeries
   public:
     using type = TimeSerie<RawValueType, TimeSerieType, NDim, container_t>;
     using raw_value_type = RawValueType;
+    using axis_t         = std::vector<double>;
+    using data_t         = decltype(_data);
 
     using iterator_value_1d = details::iterators::IteratorValue<raw_value_type>;
 
     using iterator_value_nd =
-        details::iterators::TimeSerieSlice<raw_value_type, container_t,
-                                           NDim - 1>;
+        details::iterators::TimeSerieSlice<type, NDim - 1>;
 
     using value_type = typename std::conditional_t<NDim == 1, iterator_value_1d,
                                                    iterator_value_nd>;
@@ -105,8 +106,7 @@ namespace TimeSeries
         details::iterators::IteratorValue<raw_value_type,
                                           details::iterators::compare_time>;
     using iterator_value_nd_by_index =
-        details::iterators::TimeSerieSlice<raw_value_type, container_t,
-                                           NDim - 1,
+        details::iterators::TimeSerieSlice<type, NDim - 1,
                                            details::iterators::compare_time>;
 
     using iterator_t = typename std::conditional_t<

@@ -20,6 +20,18 @@ namespace
     auto s = TimeSeries::ScalarTs();
   }
 
+  TEST(ASimpleScalar, CanSetData)
+  {
+    {
+      auto s = TimeSeries::ScalarTs();
+      s.set_data(std::vector{1., 2., 3.}, std::vector{4., 5., 6.});
+      EXPECT_EQ(s.size(), 3);
+      EXPECT_EQ(s[0], 4.);
+      EXPECT_EQ(s[1], 5.);
+      EXPECT_EQ(s[2], 6.);
+    }
+  }
+
   TEST(ASimpleScalar, CanBeCopyConstructed)
   {
     // this has at least to buidl

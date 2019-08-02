@@ -229,6 +229,32 @@ namespace TimeSeries
       std::copy(begin_it, end_it, this->begin());
     }
 
+    template<int ndim = NDim>
+    typename std::enable_if_t<ndim >= 2, void>
+    set_data(container_t<double>&& t, container_t<RawValueType>&& data,
+             const std::vector<std::size_t>& sizes)
+    {
+      _axes[0] = t;
+      _data    = data;
+      _shape   = sizes;
+      for(int i = 1; i < NDim; i++)
+      {
+        _axes[i].resize(_shape[i]);
+      }
+      _sanity_check();
+    }
+
+    template<int ndim = NDim>
+    typename std::enable_if_t<ndim == 1, void>
+    set_data(container_t<double>&& t, container_t<RawValueType>&& data)
+    {
+      _axes[0] = t;
+      _data    = data;
+      _shape.resize(1);
+      _shape[0] = t.size();
+      _sanity_check();
+    }
+
     typename std::conditional_t<NDim == 1, raw_value_type&, iterator_value_nd>
     operator[](std::size_t position)
     {

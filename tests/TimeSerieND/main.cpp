@@ -38,6 +38,22 @@ namespace
     EXPECT_NE(it1, s.begin() + 1);
   }
 
+  TEST(ATimeSerieND, CanSetData)
+  {
+    {
+      auto s = MyTimeSerie2d({100, 10});
+      s.set_data(std::vector{1., 2., 3.}, std::vector{1., 2., 3., 4., 5., 6.},
+                 {3, 2});
+      EXPECT_EQ(s.size(), 3);
+      EXPECT_EQ(s.size(1), 2);
+      EXPECT_EQ(s[0][0], 1.);
+      EXPECT_EQ(s[0][1], 2.);
+      EXPECT_EQ(s[1][0], 3.);
+      EXPECT_EQ(s[1][1], 4.);
+      EXPECT_EQ(s[2][0], 5.);
+    }
+  }
+
   TEST(ATimeSerieND, CanSetShape)
   {
     {

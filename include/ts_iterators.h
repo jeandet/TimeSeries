@@ -131,11 +131,6 @@ namespace TimeSeries::details::iterators
     const value_type& operator*() const { return _CurrentValue; }
     value_type* operator->() { return &_CurrentValue; }
     value_type& operator*() { return _CurrentValue; }
-    value_type& operator[](int offset) const
-    {
-      auto copy = *this;
-      return *(copy + offset);
-    }
 
   protected:
     indexes_t _indexes;

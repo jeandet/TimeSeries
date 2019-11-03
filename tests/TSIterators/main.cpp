@@ -61,7 +61,9 @@ namespace
     auto beg = s.begin();
     auto end = s.end();
 
+    EXPECT_EQ((beg + 0)->v(), 33.);
     EXPECT_EQ((beg + 1)->v(), 22.);
+    EXPECT_EQ((beg + 2)->v(), 11.);
     EXPECT_EQ((end - 1)->v(), 11.);
     EXPECT_EQ((1 + beg)->v(), 22.);
     EXPECT_EQ((-1 + end)->v(), 11.);
@@ -76,15 +78,6 @@ namespace
     EXPECT_GT(it2, it1);
     EXPECT_EQ(it1, std::begin(s));
     EXPECT_NE(it1, it2);
-  }
-
-  TEST(ATSIterator, CanOffsetDereference)
-  {
-    auto s   = TimeSeries::ScalarTs({0., 1., 2.}, {33., 22., 11.});
-    auto it1 = s.begin();
-    EXPECT_EQ(it1[0].v(), 33.);
-    EXPECT_EQ(it1[1].v(), 22.);
-    EXPECT_EQ(it1[2].v(), 11.);
   }
 
 } // namespace

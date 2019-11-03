@@ -28,7 +28,7 @@ foreach test:['SimpleScalar','STL_ALGS','GenericTS', 'TimeSerieND', 'TSIterators
                     dependencies:[gtest_dep, time_series_dep],
                     install: false
                     )
-    test(test, exe)
+    test(test, exe, args:['--gtest_output=xml:@0@_gtest_output.xml'.format(test)])
 endforeach
 
 foreach benchmark:['benchmarks']

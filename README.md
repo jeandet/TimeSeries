@@ -63,15 +63,14 @@ EOF
 ```
 ### From sources
 Usually using it a project submodule is enough, if you really want to install it on your system:
-
 ```bash
 meson build
 cd build
 ninja
 sudo ninja install
-```bash
-**Uninstalling**:
 ```
+**Uninstalling**:
+```bash
 sudo ninja uninstall
 ```
 

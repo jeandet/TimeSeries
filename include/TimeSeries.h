@@ -9,6 +9,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <limits>
 
 namespace TimeSeries
 {
